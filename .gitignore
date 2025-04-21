@@ -1,5 +1,5 @@
 # Virtual environments
-myenv/
+.venv/
 
 # Python cache
 __pycache__/
@@ -13,3 +13,6 @@ __pycache__/
 
 # macOS system file
 .DS_Store
+
+# Package cache
+*.egg-info

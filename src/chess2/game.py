@@ -40,7 +40,7 @@ class Game():
         }
 
         while True:
-            move_str = input("Encode your move coordinates like this: a2a4 and press Enter when you are done")
+            move_str = input("Encode your move coordinates like this: a2a4 and press Enter when you are done\n")
 
             if move_str == "quit":
                 return False

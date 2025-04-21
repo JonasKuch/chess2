@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from enums import Color, PieceType
+from chess2 import Color, PieceType
 
 
 
