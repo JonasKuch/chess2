@@ -1,0 +1,1 @@
+from chess2.enums import Color, PieceType
