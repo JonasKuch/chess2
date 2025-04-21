@@ -1,1 +1,15 @@
+# Virtual environments
 myenv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+
+# VS Code or other IDE settings (optional)
+.vscode/
+
+# macOS system file
+.DS_Store
