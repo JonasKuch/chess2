@@ -34,6 +34,9 @@ class Piece(ABC):
             x_old, y_old = self._position
             simulated_board = self.board.clone()
             simulated_board.grid[y_old][x_old]._position = move
+            if not simulated_board.is_empty(move): 
+                x, y = move
+                simulated_board.grid[y][x]._captured = True
             simulated_board.update_grid()
 
             if not simulated_board.is_under_attack(self._color):
