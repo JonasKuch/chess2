@@ -88,17 +88,30 @@ class Board():
         return king_pos in squares_under_attack
     
     
-    def print(self):
+    def print(self, side):
         print("\n")
-        for row_number in range(1, 9):
-            row_list = []
-            for square in self.grid[-row_number]:
-                if square == None:
-                    row_list.append('_') 
-                else:
-                    row_list.append(square.str)
-            print(f"{9-row_number}   {row_list}")
-        print(f"\n      a    b    c    d    e    f    g    h \n")
+
+        if side == Color.WHITE:
+            for row_number in range(1, 9):
+                row_list = []
+                for square in self.grid[-row_number]:
+                    if square == None:
+                        row_list.append('_') 
+                    else:
+                        row_list.append(square.str)
+                print(f"{9-row_number}   {row_list}")
+            print(f"\n      a    b    c    d    e    f    g    h \n")
+        
+        if side == Color.BLACK:
+            for row_number in range(8):
+                row_list = []
+                for square in self.grid[row_number]:
+                    if square == None:
+                        row_list.append('_') 
+                    else:
+                        row_list.append(square.str)
+                print(f"{row_number+1}   {row_list}")
+            print(f"\n      a    b    c    d    e    f    g    h \n")
                 
     
     def get_possible_moves_of_all_pieces(self, color):
@@ -116,7 +129,7 @@ class Board():
         self.black_king.in_check = True if self.is_under_attack(Color.BLACK) else False
     
 
-    def check_for_mates(self, color):
+    def check_if_mate(self, color):
         # must be called after update_checks and after update_grid
         has_moves = False
         in_check = self.white_king.in_check if color == Color.WHITE else self.black_king.in_check

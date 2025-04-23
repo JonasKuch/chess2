@@ -10,7 +10,7 @@ class Game():
 
     def start_game(self):
         self.board.initialize()
-        self.board.print()
+        self.board.print(self.turn)
 
     def translate_input(self, input_string):
         '''
@@ -76,9 +76,9 @@ class Game():
                 break
             self.board.update_grid()
             self.board.update_checks()
-            self.board.print()
             self.turn = Color.BLACK if self.turn == Color.WHITE else Color.WHITE
-            if self.board.check_for_mates(self.turn): 
+            self.board.print(self.turn)
+            if self.board.check_if_mate(self.turn): 
                 winning_color = Color.BLACK if self.turn == Color.WHITE else Color.WHITE
                 print(f"Check Mate! {winning_color.name} won!")
                 break
