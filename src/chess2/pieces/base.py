@@ -28,7 +28,7 @@ class Piece(ABC):
             self.board.manage_castelling_squares_under_attack()
 
 
-    def get_legal_moves(self): # noch nicht ganz fertig
+    def get_legal_moves(self):
         legal_moves = []
         for move in self.get_pseudo_legal_moves():
             x_old, y_old = self._position

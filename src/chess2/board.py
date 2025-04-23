@@ -135,7 +135,6 @@ class Board():
         in_check = self.white_king.in_check if color == Color.WHITE else self.black_king.in_check
         for piece in self.pieces_on_board:
             if not piece._captured and piece._color == color:
-                print(f"{piece.str}, {piece.get_legal_moves()}")
                 if not piece.get_legal_moves() == []:
                     has_moves = True
                     break
