@@ -8,6 +8,7 @@ class Rook(Piece):
         super().__init__(color, position, board)
         self.str = 'R' if self._color == Color.WHITE else 'r'
         self.type = PieceType.ROOK
+        self.value = 5
 
 
     def get_pseudo_legal_moves(self):

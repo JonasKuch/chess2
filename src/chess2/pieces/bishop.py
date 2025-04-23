@@ -8,6 +8,7 @@ class Bishop(Piece):
         super().__init__(color, position, board)
         self.str = 'B' if self._color == Color.WHITE else 'b'
         self.type = PieceType.BISHOP
+        self.value = 3
 
 
     def get_pseudo_legal_moves(self):

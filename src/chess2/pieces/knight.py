@@ -8,6 +8,7 @@ class Knight(Piece):
         super().__init__(color, position, board)
         self.str = 'N' if self._color == Color.WHITE else 'n'
         self.type = PieceType.KNIGHT
+        self.value = 3
 
 
     def get_pseudo_legal_moves(self):

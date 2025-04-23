@@ -9,6 +9,7 @@ class Pawn(Piece):
         self._en_passant_vulnerability = False
         self.str = 'P' if self._color == Color.WHITE else 'p'
         self.type = PieceType.PAWN
+        self.value = 1
 
 
     def get_pseudo_legal_moves(self):

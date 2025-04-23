@@ -8,6 +8,7 @@ class Queen(Piece):
         super().__init__(color, position, board)
         self.str = 'Q' if self._color == Color.WHITE else 'q'
         self.type = PieceType.QUEEN
+        self.value = 9
 
 
     def get_pseudo_legal_moves(self):
