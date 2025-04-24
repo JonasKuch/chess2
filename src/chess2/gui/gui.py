@@ -56,7 +56,17 @@ class PiecesRenderer():
 
 
 
-        
+
+class EventHandler():
+    def __init__(self, window):
+        self.selected = None
+        self.square_width = 0.8*window.width / 8
+    
+
+    def quit_game(self, event):
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            raise SystemExit
 
 
 class GameLoop():
@@ -64,12 +74,15 @@ class GameLoop():
         self.window = Window(width, height)
         self.board_renderer = BoardRenderer(self.window)
         self.pieces_renderer = PiecesRenderer(self.window, board)
+        self.event_handler = EventHandler(self.window)
         self.clock = pygame.time.Clock()
     def gameloop(self):
         while True:
             self.window.draw()
             self.board_renderer.draw()
             self.pieces_renderer.draw()
+            for event in pygame.event.get():
+                self.event_handler.quit_game(event)
             self.window.update()
             self.clock.tick()
 
