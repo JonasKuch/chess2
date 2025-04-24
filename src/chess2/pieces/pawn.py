@@ -25,7 +25,7 @@ class Pawn(Piece):
                 possible_moves.append((x, y+direction))
         
         # Two steps ahead
-        if y == start_row and self.board.is_empty((x, y+2*direction)):
+        if y == start_row and self.board.is_empty((x, y+direction)) and self.board.is_empty((x, y+2*direction)):
             possible_moves.append((x, y+2*direction))
         
         # Take piece

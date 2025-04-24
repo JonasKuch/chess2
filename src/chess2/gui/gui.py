@@ -29,8 +29,8 @@ class BoardRenderer():
         self.square_width = 0.8*window.width / 8
 
     def draw(self):
-        for x in range(1, 9):
-            for y in range(1, 9):
+        for x in range(8):
+            for y in range(8):
                 rect = pygame.Rect(x*self.square_width, y*self.square_width, self.square_width, self.square_width)
                 color = self.colors[(x+y)%2]
                 pygame.draw.rect(self.surface, color, rect)
@@ -51,7 +51,7 @@ class PiecesRenderer():
             color_prefix = "w" if piece._color == Color.WHITE else "b"
             img_path = f"{self.pieces_dir}/{color_prefix}{piece.str}.png"
             img = pygame.transform.scale(pygame.image.load(img_path), (self.square_width, self.square_width))
-            pos = ( (x+1)*self.square_width, (8-y)*self.square_width ) if side == Color.WHITE else ( (8-x)*self.square_width, (y+1)*self.square_width ) 
+            pos = ( x*self.square_width, (7-y)*self.square_width ) if side == Color.WHITE else ( (7-x)*self.square_width, y*self.square_width ) 
             if not piece._captured: self.surface.blit(img, pos)
 
 
@@ -74,8 +74,14 @@ class EventHandler():
     def handle(self, event, turn_color):
         if event.type == pygame.MOUSEBUTTONDOWN:
             x, y = event.pos
-            x_board = int(x // self.square_width-1)
-            y_board = 7 - int(y // self.square_width-1)
+            x_board = int(x / self.square_width)
+            y_board = 7 - int(y / self.square_width)
+
+            if not self.board.in_bounds((x_board, y_board)):
+                self.selected_pos = None
+                self.valid_moves = None
+                return
+            
             selected_square = self.board.grid[y_board][x_board]
             
 
@@ -83,19 +89,26 @@ class EventHandler():
                 if selected_square._color == turn_color:
                     self.selected_pos = x_board, y_board
                     self.valid_moves = selected_square.get_legal_moves()
-            elif self.selected_pos is not None:
+
+            if not self.selected_pos is None:
                 x_selected, y_selected = self.selected_pos
+
                 if (x_board, y_board) in self.valid_moves:
                     self.board.grid[y_selected][x_selected].move((x_board, y_board))
-                    self.board.update_grid()
-                self.selected_pos = None
-                self.valid_moves = None
-            
+                
+                selected_square = self.board.grid[y_board][x_board]
+                if not selected_square is None:
+                    if selected_square._color == turn_color:
+                        self.selected_pos = x_board, y_board
+                        self.valid_moves = selected_square.get_legal_moves()
+                    else:
+                        self.selected_pos = None
+                        self.valid_moves = None
+                else:
+                    self.selected_pos = None
+                    self.valid_moves = None
+                
             print(self.selected_pos)
-
-
-
-
 
 
 
@@ -106,20 +119,24 @@ class GameLoop():
         self.pieces_renderer = PiecesRenderer(self.window, board)
         self.event_handler = EventHandler(self.window, board)
         self.clock = pygame.time.Clock()
+        self.board = board
+
+
     def gameloop(self):
-        while True:
-            self.window.draw()
-            self.board_renderer.draw()
-            self.pieces_renderer.draw()
-            for event in pygame.event.get():
-                self.event_handler.quit_game(event)
-                self.event_handler.handle(event, Color.WHITE)
-            self.window.update()
-            self.clock.tick()
+        self.window.draw()
+        self.board_renderer.draw()
+        self.pieces_renderer.draw()
+        for event in pygame.event.get():
+            self.event_handler.quit_game(event)
+            self.event_handler.handle(event, Color.WHITE)
+        self.board.update_grid()
+        self.window.update()
+        self.clock.tick(5000)
 
 
 if __name__ == "__main__":
     board = Board()
     board.initialize()
     game = GameLoop(700, 800, board)
-    game.gameloop()
+    while True:
+        game.gameloop()
