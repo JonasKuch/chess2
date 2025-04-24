@@ -69,46 +69,64 @@ class EventHandler():
         if event.type == pygame.QUIT:
             pygame.quit()
             raise SystemExit
+    
+
+    def _reset_attributes(self):
+        self.selected_pos = None
+        self.valid_moves = None
+
+
+    def _convert_mouse_position(self, position):
+        x, y = position
+        x_board = int(x / self.square_width)
+        y_board = 7 - int(y / self.square_width)
+
+        if not self.board.in_bounds((x_board, y_board)):
+            self._reset_attributes()
+            return None
+        
+        return x_board, y_board
         
 
     def handle(self, event, turn_color):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x, y = event.pos
-            x_board = int(x / self.square_width)
-            y_board = 7 - int(y / self.square_width)
+        if event.type != pygame.MOUSEBUTTONDOWN:
+            return None
+        
+        # Teste ob Klick innerhalb des Bretts
+        board_pos = self._convert_mouse_position(event.pos)
+        if board_pos is None: 
+            return None
+        
+        x_board, y_board = board_pos
+        selected_square = self.board.grid[y_board][x_board]
 
-            if not self.board.in_bounds((x_board, y_board)):
-                self.selected_pos = None
-                self.valid_moves = None
-                return
-            
-            selected_square = self.board.grid[y_board][x_board]
-            
-
-            if self.selected_pos is None and not selected_square is None:
-                if selected_square._color == turn_color:
-                    self.selected_pos = x_board, y_board
-                    self.valid_moves = selected_square.get_legal_moves()
-
-            if not self.selected_pos is None:
-                x_selected, y_selected = self.selected_pos
-
-                if (x_board, y_board) in self.valid_moves:
-                    self.board.grid[y_selected][x_selected].move((x_board, y_board))
-                
-                selected_square = self.board.grid[y_board][x_board]
-                if not selected_square is None:
-                    if selected_square._color == turn_color:
-                        self.selected_pos = x_board, y_board
-                        self.valid_moves = selected_square.get_legal_moves()
-                    else:
-                        self.selected_pos = None
-                        self.valid_moves = None
-                else:
-                    self.selected_pos = None
-                    self.valid_moves = None
-                
-            print(self.selected_pos)
+        # Noch kein Piece ausgewählt
+        if self.selected_pos is None:
+            # Square ist leer oder vom Gegner besetzt
+            if selected_square is None or selected_square._color != turn_color:
+                return None
+            # Ansonsten wähle square aus
+            self.selected_pos = x_board, y_board
+            self.valid_moves = selected_square.get_legal_moves()
+            return None
+        
+        # Schon ein Piece ausgewählt
+        x_selected, y_selected = self.selected_pos
+        # Move wenn legal
+        if (x_board, y_board) in self.valid_moves:
+            self.board.grid[y_selected][x_selected].move((x_board, y_board))
+            self._reset_attributes()
+            return None
+        # Wenn Move nicht legal
+        selected_square = self.board.grid[y_board][x_board]
+        # Wenn neu ausgewähltes Feld leer, dann return und reset
+        if selected_square is None or selected_square._color != turn_color:
+            self._reset_attributes()
+            return None
+        # Ansonsten wähle neues Feld aus
+        self.selected_pos = x_board, y_board
+        self.valid_moves = selected_square.get_legal_moves()
+        return None
 
 
 
