@@ -82,51 +82,49 @@ class EventHandler():
         y_board = 7 - int(y / self.square_width)
 
         if not self.board.in_bounds((x_board, y_board)):
-            self._reset_attributes()
             return None
         
         return x_board, y_board
         
 
     def handle(self, event, turn_color):
+        # 1) Only handle clicks
         if event.type != pygame.MOUSEBUTTONDOWN:
-            return None
+            return "ignored"
         
-        # Teste ob Klick innerhalb des Bretts
+        # 2) Convert mouse → board coords (and reset if off-board)
         board_pos = self._convert_mouse_position(event.pos)
-        if board_pos is None: 
-            return None
+        if board_pos is None:
+            self._reset_attributes()
+            return "ignored"
         
         x_board, y_board = board_pos
         selected_square = self.board.grid[y_board][x_board]
 
-        # Noch kein Piece ausgewählt
+        # 3) No piece selected yet → try to select
         if self.selected_pos is None:
-            # Square ist leer oder vom Gegner besetzt
             if selected_square is None or selected_square._color != turn_color:
-                return None
-            # Ansonsten wähle square aus
+                return "ignored"
             self.selected_pos = x_board, y_board
             self.valid_moves = selected_square.get_legal_moves()
-            return None
+            return "selected"
         
-        # Schon ein Piece ausgewählt
+        # 4) A piece is already selected → attempt move
         x_selected, y_selected = self.selected_pos
-        # Move wenn legal
         if (x_board, y_board) in self.valid_moves:
             self.board.grid[y_selected][x_selected].move((x_board, y_board))
             self._reset_attributes()
-            return None
-        # Wenn Move nicht legal
-        selected_square = self.board.grid[y_board][x_board]
-        # Wenn neu ausgewähltes Feld leer, dann return und reset
-        if selected_square is None or selected_square._color != turn_color:
-            self._reset_attributes()
-            return None
-        # Ansonsten wähle neues Feld aus
-        self.selected_pos = x_board, y_board
-        self.valid_moves = selected_square.get_legal_moves()
-        return None
+            return "moved"
+        
+        # 5) Click wasn’t a legal move → maybe re-select another of yours
+        if selected_square and selected_square._color == turn_color:
+            self.selected_pos = x_board, y_board
+            self.valid_moves = selected_square.get_legal_moves()
+            return "selected"
+        
+        # 6) Otherwise, clear selection
+        self._reset_attributes()
+        return "ignored"
 
 
 
