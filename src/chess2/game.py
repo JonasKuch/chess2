@@ -3,7 +3,6 @@ from chess2 import Color, Action
 from chess2.gui import GameLoop
 
 
-
 class Game():
     def __init__(self, in_gui = True, width = 700, height = 800):
         self.board = Board()
@@ -92,10 +91,17 @@ class Game():
                 break
 
     def game_loop_gui(self):
+        import pygame
         self.start_game()
         while True:
             action = self.gui.gameloop(turn = self.turn, side = self.turn)
-            if action == Action.MOVED: 
-                self.board.update_grid()
+            if action == Action.MOVED:
+                # self.board.update_grid()
                 self.board.update_checks()
                 self.swap_turns()
+                if self.board.check_if_mate(self.turn):
+                    winning_color = Color.BLACK if self.turn == Color.WHITE else Color.WHITE
+                    print(f"Check Mate! {winning_color.name} won!")
+                    pygame.quit()
+                    raise SystemExit
+            self.gui.tick(60)

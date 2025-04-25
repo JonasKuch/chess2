@@ -19,3 +19,7 @@ class PiecesRenderer():
             img = pygame.transform.scale(pygame.image.load(img_path), (self.square_width, self.square_width))
             pos = ( x*self.square_width, (7-y)*self.square_width ) if side == Color.WHITE else ( (7-x)*self.square_width, y*self.square_width ) 
             if not piece._captured: self.surface.blit(img, pos)
+    
+
+    def pawn_promotion(self, side):
+        pass

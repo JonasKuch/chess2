@@ -24,12 +24,15 @@ class GameLoop():
         for event in pygame.event.get():
             self.event_handler.quit_game(event)
             self.action = self.event_handler.handle(event, turn, side)
-        # self.board.update_grid()
+        self.board.update_grid()
         self.window.update()
-        self.clock.tick(5000)
         if self.action == Action.MOVED:
             return self.action
         return None
+    
+
+    def tick(self, framerate):
+        self.clock.tick(framerate)
 
 
 if __name__ == "__main__":
@@ -38,5 +41,6 @@ if __name__ == "__main__":
     game_loop = GameLoop(700, 800, board)
     while True:
         action = game_loop.gameloop(Color.BLACK, Color.BLACK)
-        if action == Action.MOVED: 
-            board.update_grid()
+        if action == Action.MOVED:
+            print("move") 
+        game_loop.tick(60)
