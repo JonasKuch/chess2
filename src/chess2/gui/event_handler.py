@@ -1,5 +1,6 @@
 from chess2.gui import Window
 from chess2.board import Board
+from chess2 import Color
 import pygame
 from chess2 import Action
 
@@ -23,10 +24,14 @@ class EventHandler():
         self.valid_moves = None
 
 
-    def _convert_mouse_position(self, position):
+    def _convert_mouse_position(self, position, side): ####### evtl für Color.BLACK muss y nicht invertiert werden
         x, y = position
-        x_board = int(x / self.square_width)
-        y_board = 7 - int(y / self.square_width)
+        if side == Color.WHITE:
+            x_board = int(x / self.square_width)
+            y_board = 7 - int(y / self.square_width)
+        if side == Color.BLACK:
+            x_board = 7 - int(x / self.square_width)
+            y_board = int(y / self.square_width)
 
         if not self.board.in_bounds((x_board, y_board)):
             return None
@@ -34,13 +39,13 @@ class EventHandler():
         return x_board, y_board
         
 
-    def handle(self, event, turn_color):
+    def handle(self, event, turn_color, side):
         # 1) Only handle clicks
         if event.type != pygame.MOUSEBUTTONDOWN:
             return Action.IGNORED
         
         # 2) Convert mouse → board coords (and reset if off-board)
-        board_pos = self._convert_mouse_position(event.pos)
+        board_pos = self._convert_mouse_position(event.pos, side)
         if board_pos is None:
             self._reset_attributes()
             return Action.IGNORED

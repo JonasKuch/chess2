@@ -14,23 +14,29 @@ class GameLoop():
         self.event_handler = EventHandler(self.window, board)
         self.clock = pygame.time.Clock()
         self.board = board
+        self.action = None
 
 
-    def gameloop(self):
+    def gameloop(self, turn, side):
         self.window.draw()
         self.board_renderer.draw()
-        self.pieces_renderer.draw()
+        self.pieces_renderer.draw(side)
         for event in pygame.event.get():
             self.event_handler.quit_game(event)
-            self.event_handler.handle(event, Color.WHITE)
-        self.board.update_grid()
+            self.action = self.event_handler.handle(event, turn, side)
+        # self.board.update_grid()
         self.window.update()
         self.clock.tick(5000)
+        if self.action == Action.MOVED:
+            return self.action
+        return None
 
 
 if __name__ == "__main__":
     board = Board()
     board.initialize()
-    game = GameLoop(700, 800, board)
+    game_loop = GameLoop(700, 800, board)
     while True:
-        game.gameloop()
+        action = game_loop.gameloop(Color.BLACK, Color.BLACK)
+        if action == Action.MOVED: 
+            board.update_grid()

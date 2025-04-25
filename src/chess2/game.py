@@ -1,22 +1,30 @@
 from chess2.board import Board
-from chess2 import Color
+from chess2 import Color, Action
+from chess2.gui import GameLoop
 
 
 
 class Game():
-    def __init__(self):
+    def __init__(self, in_gui = True, width = 700, height = 800):
         self.board = Board()
+        self.gui = GameLoop(width, height, self.board)
         self.turn = Color.WHITE
+        self.in_gui = in_gui
+        self.action = None
 
-    def start_game(self):
+    def start_game(self, ):
         self.board.initialize()
-        self.board.print(self.turn)
+        if not self.in_gui: self.board.print(self.turn)
 
     def translate_input(self, input_string):
         '''
         könnte man hier noch einfügen um make_move ein bisschen übersichtlicher zu gestalten
         '''
         pass
+    
+
+    def swap_turns(self):
+        self.turn = Color.BLACK if self.turn == Color.WHITE else Color.WHITE
 
 
     def make_move(self):
@@ -67,7 +75,7 @@ class Game():
         return True
         
 
-    def game_loop(self):
+    def game_loop_terminal(self):
         self.start_game()
         while True:
             go_on = self.make_move()
@@ -76,9 +84,18 @@ class Game():
                 break
             self.board.update_grid()
             self.board.update_checks()
-            self.turn = Color.BLACK if self.turn == Color.WHITE else Color.WHITE
+            self.swap_turns()
             self.board.print(self.turn)
             if self.board.check_if_mate(self.turn): 
                 winning_color = Color.BLACK if self.turn == Color.WHITE else Color.WHITE
                 print(f"Check Mate! {winning_color.name} won!")
                 break
+
+    def game_loop_gui(self):
+        self.start_game()
+        while True:
+            action = self.gui.gameloop(turn = self.turn, side = self.turn)
+            if action == Action.MOVED: 
+                self.board.update_grid()
+                self.board.update_checks()
+                self.swap_turns()

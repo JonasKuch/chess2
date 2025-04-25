@@ -11,7 +11,7 @@ class PiecesRenderer():
         self.pieces_dir = pieces_dir
     
 
-    def draw(self, side = Color.WHITE):
+    def draw(self, side):
         for piece in self.board.pieces_on_board:
             x, y = piece._position
             color_prefix = "w" if piece._color == Color.WHITE else "b"
