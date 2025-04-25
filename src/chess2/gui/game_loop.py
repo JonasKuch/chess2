@@ -21,9 +21,9 @@ class GameLoop():
         self.window.draw()
         self.board_renderer.draw()
         self.pieces_renderer.draw(side)
-        for event in pygame.event.get():
-            self.event_handler.quit_game(event)
-            self.action = self.event_handler.handle(event, turn, side)
+        event = pygame.event.wait() # Pauses Loop until event; mouse movement also counts
+        self.event_handler.quit_game(event)
+        self.action = self.event_handler.handle(event, turn, side)
         self.board.update_grid()
         self.window.update()
         if self.action == Action.MOVED:
@@ -42,5 +42,5 @@ if __name__ == "__main__":
     while True:
         action = game_loop.gameloop(Color.BLACK, Color.BLACK)
         if action == Action.MOVED:
-            print("move") 
+            pass # here turn
         game_loop.tick(60)

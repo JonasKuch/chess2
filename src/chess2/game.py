@@ -1,6 +1,8 @@
 from chess2.board import Board
 from chess2 import Color, Action
 from chess2.gui import GameLoop
+import pygame
+
 
 
 class Game():
@@ -91,7 +93,6 @@ class Game():
                 break
 
     def game_loop_gui(self):
-        import pygame
         self.start_game()
         while True:
             action = self.gui.gameloop(turn = self.turn, side = self.turn)
