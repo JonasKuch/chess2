@@ -17,13 +17,16 @@ class GameLoop():
         self.action = None
 
 
-    def gameloop(self, turn, side):
+    def gameloop(self, turn, side, show_legal_moves = True):
         self.window.draw()
         self.board_renderer.draw()
         self.pieces_renderer.draw(side)
         event = pygame.event.wait() # Pauses Loop until event; mouse movement also counts
         self.event_handler.quit_game(event)
         self.action = self.event_handler.handle(event, turn, side)
+        selected_piece = self.event_handler.selected_piece
+        if selected_piece:
+            self.pieces_renderer.draw_legal_moves(selected_piece, side)
         self.board.update_grid()
         self.window.update()
         if self.action == Action.MOVED:

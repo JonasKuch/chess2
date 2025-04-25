@@ -8,6 +8,7 @@ from chess2 import Action
 class EventHandler():
     def __init__(self, window:Window, board:Board):
         self.selected_pos = None
+        self.selected_piece = None
         self.valid_moves = None
         self.square_width = 0.8*window.width / 8
         self.board = board
@@ -21,6 +22,7 @@ class EventHandler():
 
     def _reset_attributes(self):
         self.selected_pos = None
+        self.selected_piece = None
         self.valid_moves = None
 
 
@@ -58,6 +60,7 @@ class EventHandler():
             if selected_square is None or selected_square._color != turn_color:
                 return Action.IGNORED
             self.selected_pos = x_board, y_board
+            self.selected_piece = selected_square
             self.valid_moves = selected_square.get_legal_moves()
             return Action.SELECTED
         
@@ -71,6 +74,7 @@ class EventHandler():
         # 5) Click wasn’t a legal move → maybe re-select another of yours
         if selected_square and selected_square._color == turn_color:
             self.selected_pos = x_board, y_board
+            self.selected_piece = selected_square
             self.valid_moves = selected_square.get_legal_moves()
             return Action.SELECTED
         

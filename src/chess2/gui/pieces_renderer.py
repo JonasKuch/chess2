@@ -23,3 +23,13 @@ class PiecesRenderer():
 
     def pawn_promotion(self, side):
         pass
+
+
+    def draw_legal_moves(self, piece, side):
+        img_path = f"{self.pieces_dir}/dot.png"
+        img = pygame.transform.scale(pygame.image.load(img_path), (self.square_width, self.square_width))
+        legal_moves = piece.get_legal_moves()
+        for move in legal_moves:
+            x, y = move
+            pos = ( x*self.square_width, (7-y)*self.square_width ) if side == Color.WHITE else ( (7-x)*self.square_width, y*self.square_width ) 
+            self.surface.blit(img, pos)
