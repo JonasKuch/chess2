@@ -15,3 +15,9 @@ class PieceType(Enum):
     BISHOP = "bishop"
     QUEEN = "queen"
     KING = "king"
+
+
+class Action(Enum):
+    MOVED = "moved"
+    IGNORED = "ignored"
+    SELECTED = "selected"

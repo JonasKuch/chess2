@@ -1,1 +1,1 @@
-from chess2.enums import Color, PieceType
+from chess2.enums import Color, PieceType, Action
