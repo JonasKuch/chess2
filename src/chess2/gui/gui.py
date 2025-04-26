@@ -46,7 +46,7 @@ class GameLoop():
         if self.action == Action.MOVED:
             self.board.update_grid()
             self.board.update_checks()
-            self.draw_all_game(side = turn)
+            self.draw_all_game(side)
             self.update_window()
             return self.action
         
@@ -56,14 +56,3 @@ class GameLoop():
 
     def tick(self, framerate):
         self.clock.tick(framerate)
-
-
-if __name__ == "__main__":
-    board = Board()
-    board.initialize()
-    game_loop = GameLoop(700, 800, board)
-    while True:
-        action = game_loop.gameloop(Color.BLACK, Color.BLACK)
-        if action == Action.MOVED:
-            pass # here turn
-        game_loop.tick(60)

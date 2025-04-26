@@ -15,13 +15,12 @@ class Game():
     def __init__(self, in_gui = True, width = 700, height = 800):
         self.board = Board()
         self.gui = GameLoop(width, height, self.board)
-        self.turn = Color.WHITE
         self.in_gui = in_gui
         self.action = None
 
     def start_game(self, ):
         self.board.initialize()
-        if not self.in_gui: self.board.print(self.turn)
+        if not self.in_gui: self.board.print(self.board.turn)
 
     def translate_input(self, input_string):
         '''
@@ -32,7 +31,7 @@ class Game():
 
     def swap_turns(self, turn_board):
         if turn_board: time.sleep(0.5)
-        self.turn = Color.BLACK if self.turn == Color.WHITE else Color.WHITE
+        self.board.turn = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
 
 
     def make_move(self):
@@ -73,7 +72,7 @@ class Game():
                 continue
 
             if not self.board.grid[y_old][x_old] == None:
-                if self.board.grid[y_old][x_old]._color == self.turn:
+                if self.board.grid[y_old][x_old]._color == self.board.turn:
                     if new_pos in self.board.grid[y_old][x_old].get_legal_moves(): # eigentlich muss ich das hier nicht mehr checken, da ich das schon in der move() function der Piece Klasse checke
                         self.board.grid[y_old][x_old].move(new_pos)
                         break
@@ -93,24 +92,23 @@ class Game():
             self.board.update_grid()
             self.board.update_checks()
             self.swap_turns()
-            self.board.print(self.turn)
-            if self.board.check_if_mate(self.turn): 
-                winning_color = Color.BLACK if self.turn == Color.WHITE else Color.WHITE
+            self.board.print(self.board.turn)
+            if self.board.check_if_mate(): 
+                winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
                 print(f"Check Mate! {winning_color.name} won!")
                 break
 
 
     def game_loop_gui(self, turn_board, show_legal_moves, side = Color.WHITE):
-
         self.start_game()
 
         while True:
-            action = self.gui.gameloop(turn = self.turn, side = self.turn if turn_board else side, show_legal_moves = show_legal_moves)
+            action = self.gui.gameloop(turn = self.board.turn, side = self.board.turn if turn_board else side, show_legal_moves = show_legal_moves)
 
             if action == Action.MOVED:
                 self.swap_turns(turn_board)
-                if self.board.check_if_mate(self.turn):
-                    winning_color = Color.BLACK if self.turn == Color.WHITE else Color.WHITE
+                if self.board.check_if_mate():
+                    winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
                     print(f"Check Mate! {winning_color.name} won!")
                     pygame.quit()
                     raise SystemExit
