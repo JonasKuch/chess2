@@ -6,6 +6,7 @@ this module handles metadata, like checkmate, or which player is to turn and imp
 from chess2.board import Board
 from chess2 import Color, Action
 from chess2.gui import GameLoop
+from chess2.move import Move
 import pygame
 import time
 
@@ -15,6 +16,7 @@ class Game():
     def __init__(self, in_gui = True, width = 700, height = 800):
         self.board = Board()
         self.gui = GameLoop(width, height, self.board)
+        self.move = Move()
         self.in_gui = in_gui
         self.action = None
 
@@ -101,12 +103,14 @@ class Game():
 
     def game_loop_gui(self, turn_board, show_legal_moves, side = Color.WHITE):
         self.start_game()
+        self.move.cache_board_state(self.board)
 
         while True:
             action = self.gui.gameloop(turn = self.board.turn, side = self.board.turn if turn_board else side, show_legal_moves = show_legal_moves)
 
             if action == Action.MOVED:
                 self.swap_turns(turn_board)
+                self.move.cache_board_state(self.board)
                 if self.board.check_if_mate():
                     winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
                     print(f"Check Mate! {winning_color.name} won!")
