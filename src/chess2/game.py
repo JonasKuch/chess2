@@ -95,7 +95,7 @@ class Game():
     def game_loop_gui(self):
         self.start_game()
         while True:
-            action = self.gui.gameloop(turn = self.turn, side = self.turn)
+            action = self.gui.gameloop(turn = self.turn, side = self.turn, show_legal_moves=True)
             if action == Action.MOVED:
                 # self.board.update_grid()
                 self.board.update_checks()

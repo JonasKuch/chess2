@@ -13,7 +13,7 @@ class Knight(Piece):
 
     def get_pseudo_legal_moves(self):
         possible_moves = []
-        directions = [(1, 2), (2, 1), (1, -2), (-2, 1), (-2, -1), (-1, -2), (-2, 1), (-1, 2)]
+        directions = [(1, 2), (2, 1), (2, -1), (1, -2), (-2, -1), (-1, -2), (-2, 1), (-1, 2)]
 
         for direction in directions:
             x_pos, y_pos = self._position

@@ -25,7 +25,7 @@ class GameLoop():
         self.event_handler.quit_game(event)
         self.action = self.event_handler.handle(event, turn, side)
         selected_piece = self.event_handler.selected_piece
-        if selected_piece:
+        if selected_piece and show_legal_moves:
             self.pieces_renderer.draw_legal_moves(selected_piece, side)
         self.board.update_grid()
         self.window.update()
