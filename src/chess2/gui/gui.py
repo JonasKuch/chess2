@@ -7,6 +7,7 @@ from chess2.gui import Window
 from chess2.gui import BoardRenderer
 from chess2.gui import PiecesRenderer
 from chess2.gui import EventHandler
+from chess2.gui import Button
 from chess2 import Color, Action
 from chess2.board import Board
 import pygame
@@ -17,6 +18,7 @@ class GameLoop():
         self.board_renderer = BoardRenderer(self.window)
         self.pieces_renderer = PiecesRenderer(self.window, board)
         self.event_handler = EventHandler(self.window, board)
+        self.button = Button((100, 600), 50, 50, "red", ">", "black")
         self.clock = pygame.time.Clock()
         self.board = board
         self.action = None
@@ -26,6 +28,7 @@ class GameLoop():
         self.window.draw()
         self.board_renderer.draw()
         self.pieces_renderer.draw(side)
+        self.button.draw(self.window.screen)
 
     
     def update_window(self):
