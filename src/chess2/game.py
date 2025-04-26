@@ -22,16 +22,6 @@ class Game():
         self.with_takeback = with_takeback
 
 
-    def start_game(self, ):
-        self.board.initialize()
-        if not self.in_gui: self.board.print(self.board.turn)
-    
-
-    def swap_turns(self, turn_board):
-        if turn_board: time.sleep(0.5)
-        self.board.turn = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
-
-
     def translate_input(self, input_string):
         '''
         könnte man hier noch einfügen um make_move ein bisschen übersichtlicher zu gestalten
@@ -104,6 +94,16 @@ class Game():
                 break
     
 
+    def start_game(self, ):
+        self.board.initialize()
+        if not self.in_gui: self.board.print(self.board.turn)
+    
+
+    def swap_turns(self, turn_board):
+        if turn_board: time.sleep(0.5)
+        self.board.turn = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
+
+
     def on_undo(self):
         if not self.with_takeback:
             return None
@@ -112,6 +112,7 @@ class Game():
         self.move.move_num -= 1
         other_board = self.move.load_board_state(self.move.move_num)
         self.board.load_state(other_board)
+        self.board.print(Color.WHITE)
         self.move.move_cache[self.move.move_num] = self.board.clone()    # Wichtig, da sindt der nächste zug direkt auf das gerade initialisierte board angewendet werden würde bevor es gecached wird
 
 

@@ -70,11 +70,11 @@ class Board():
         return (0 <= x <= 7 and 0 <= y <= 7)
     
 
-    def clone(self):
+    def clone(self):   ############################ see chat gpt: jonas.a.kuch, object instance synchronisation
         return copy.deepcopy(self)
     
 
-    def load_state(self, board):
+    def load_state(self, board):    ############################ see chat gpt: jonas.a.kuch, object instance synchronisation
         for attribute in vars(board):
             setattr(self, attribute, getattr(board, attribute))
     
