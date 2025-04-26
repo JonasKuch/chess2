@@ -74,6 +74,11 @@ class Board():
         return copy.deepcopy(self)
     
 
+    def load_state(self, board):
+        for attribute in vars(board):
+            setattr(self, attribute, getattr(board, attribute))
+    
+
     def get_squares_under_attack(self, color):
         squares_under_attack = []
         for piece in self.pieces_on_board:

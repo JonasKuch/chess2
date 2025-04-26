@@ -104,11 +104,22 @@ class Game():
     
 
     def on_undo(self):
-        print("self.board.load_state(self.move.cached_boards[self.move.move-1])")
+        if self.move.move_num < 1:
+            return None
+        self.move.move_num -= 1
+        other_board = self.move.load_board_state(self.move.move_num)
+        self.board.load_state(other_board)
+        self.move.move_cache[self.move.move_num] = self.board.clone()    # Wichtig, da sindt der nächste zug direkt auf das gerade initialisierte board angewendet werden würde bevor es gecached wird
 
 
     def on_redo(self):
-        print("self.board.load_state(self.move.cached_boards[self.move.move+1])")
+        if self.move.move_num >= self.move.max_move:
+            return None
+        self.move.move_num += 1
+        other_board = self.move.move_cache[self.move.move_num]
+        self.board.load_state(other_board)
+        self.move.move_cache[self.move.move_num] = self.board.clone()    # Wichtig, da sindt der nächste zug direkt auf das gerade initialisierte board angewendet werden würde bevor es gecached wird
+
 
 
     def game_loop_gui(self, turn_board, show_legal_moves, side = Color.WHITE):
@@ -121,6 +132,10 @@ class Game():
             if action == Action.MOVED:
                 self.swap_turns(turn_board)
                 self.move.cache_board_state(self.board)
+                # print(self.move.move_num)#####################
+                # for thing in list(self.move.move_cache.values()):
+                #     thing.print(side)
+                print(self.move.move_cache)
                 if self.board.check_if_mate():
                     winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
                     print(f"Check Mate! {winning_color.name} won!")
