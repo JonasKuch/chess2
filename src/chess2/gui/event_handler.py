@@ -41,7 +41,7 @@ class EventHandler():
         return x_board, y_board
         
 
-    def handle(self, event, turn_color, side):
+    def handle_board_input(self, event, turn_color, side):
         # 1) Only handle clicks
         if event.type != pygame.MOUSEBUTTONDOWN:
             return Action.IGNORED
@@ -82,6 +82,11 @@ class EventHandler():
         self._reset_attributes()
         return Action.IGNORED
     
+
+    def handle(self, event, turn_color, side):
+        self.quit_game(event)
+        action = self.handle_board_input(event, turn_color, side)
+        return action
 
     def pawn_promotion(self, board):
         pass

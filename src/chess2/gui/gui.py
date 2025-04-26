@@ -1,3 +1,8 @@
+'''
+this module handles drawing the gui right after every event
+'''
+
+
 from chess2.gui import Window
 from chess2.gui import BoardRenderer
 from chess2.gui import PiecesRenderer
@@ -17,20 +22,35 @@ class GameLoop():
         self.action = None
 
 
-    def gameloop(self, turn, side, show_legal_moves = True):
+    def draw_all_game(self, side):
         self.window.draw()
         self.board_renderer.draw()
         self.pieces_renderer.draw(side)
-        event = pygame.event.wait() # Pauses Loop until event; mouse movement also counts
-        self.event_handler.quit_game(event)
+
+    
+    def update_window(self):
+        self.window.update()
+
+
+    def gameloop(self, turn, side, show_legal_moves = True):
+
+        self.draw_all_game(side)
+
+        event = pygame.event.wait()
         self.action = self.event_handler.handle(event, turn, side)
+
         selected_piece = self.event_handler.selected_piece
         if selected_piece and show_legal_moves:
             self.pieces_renderer.draw_legal_moves(selected_piece, side)
-        self.board.update_grid()
-        self.window.update()
+
         if self.action == Action.MOVED:
+            self.board.update_grid()
+            self.board.update_checks()
+            self.draw_all_game(side = turn)
+            self.update_window()
             return self.action
+        
+        self.update_window()
         return None
     
 

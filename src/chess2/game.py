@@ -1,7 +1,13 @@
+'''
+this module handles metadata, like checkmate, or which player is to turn and implements the final game loop
+'''
+
+
 from chess2.board import Board
 from chess2 import Color, Action
 from chess2.gui import GameLoop
 import pygame
+import time
 
 
 
@@ -24,7 +30,8 @@ class Game():
         pass
     
 
-    def swap_turns(self):
+    def swap_turns(self, turn_board):
+        if turn_board: time.sleep(0.5)
         self.turn = Color.BLACK if self.turn == Color.WHITE else Color.WHITE
 
 
@@ -92,17 +99,20 @@ class Game():
                 print(f"Check Mate! {winning_color.name} won!")
                 break
 
-    def game_loop_gui(self):
+
+    def game_loop_gui(self, turn_board, show_legal_moves, side = Color.WHITE):
+
         self.start_game()
+
         while True:
-            action = self.gui.gameloop(turn = self.turn, side = self.turn, show_legal_moves=True)
+            action = self.gui.gameloop(turn = self.turn, side = self.turn if turn_board else side, show_legal_moves = show_legal_moves)
+
             if action == Action.MOVED:
-                # self.board.update_grid()
-                self.board.update_checks()
-                self.swap_turns()
+                self.swap_turns(turn_board)
                 if self.board.check_if_mate(self.turn):
                     winning_color = Color.BLACK if self.turn == Color.WHITE else Color.WHITE
                     print(f"Check Mate! {winning_color.name} won!")
                     pygame.quit()
                     raise SystemExit
+
             self.gui.tick(60)
