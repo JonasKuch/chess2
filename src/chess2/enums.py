@@ -21,3 +21,5 @@ class Action(Enum):
     MOVED = "moved"
     IGNORED = "ignored"
     SELECTED = "selected"
+    BACKBUTTONDOWN = "back button was pushed"
+    FORWARDBUTTONDOWN = "forward button was pushed"

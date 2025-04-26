@@ -83,8 +83,14 @@ class EventHandler():
         return Action.IGNORED
     
 
-    def handle(self, event, turn_color, side):
+    def handle_buttons_game(self, buttons, event):
+        for button in buttons:
+            button.handle_event(event)
+    
+
+    def handle(self, event, turn_color, side, buttons):
         self.quit_game(event)
+        self.handle_buttons_game(buttons, event)
         action = self.handle_board_input(event, turn_color, side)
         return action
 

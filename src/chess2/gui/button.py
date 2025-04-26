@@ -1,7 +1,7 @@
 import pygame
 
 class Button():
-    def __init__(self, position:tuple, width, height, color, text, text_color):
+    def __init__(self, position:tuple, width, height, color, text, text_color, callback):
         self.x, self.y = position
         self.width = width
         self.height = height
@@ -9,7 +9,8 @@ class Button():
         self.color = color
         self.text = text
         self.text_color = text_color
-        self.font = pygame.font.Font("src/chess2/gui/fonts/Roboto-Regular.ttf", 50)
+        self.font = pygame.font.Font("src/chess2/gui/fonts/Roboto-Regular.ttf", self.height)
+        self.callback = callback
 
         self._rendered_text = self.font.render(text, True, self.text_color)
         self._text_rect = self._rendered_text.get_rect(center=self.rect.center)
@@ -24,8 +25,6 @@ class Button():
         surface.blit(self._rendered_text, self._text_rect)
 
 
-    def pushed(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN and self.is_hovered():
-            print(True)
-            return True
-        return None
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
+            self.callback()

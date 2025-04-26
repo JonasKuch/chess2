@@ -15,25 +15,27 @@ import time
 class Game():
     def __init__(self, in_gui = True, width = 700, height = 800):
         self.board = Board()
-        self.gui = GameLoop(width, height, self.board)
+        self.gui = GameLoop(width, height, self.board, self.on_undo, self.on_redo)
         self.move = Move()
         self.in_gui = in_gui
         self.action = None
 
+
     def start_game(self, ):
         self.board.initialize()
         if not self.in_gui: self.board.print(self.board.turn)
+    
+
+    def swap_turns(self, turn_board):
+        if turn_board: time.sleep(0.5)
+        self.board.turn = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
+
 
     def translate_input(self, input_string):
         '''
         könnte man hier noch einfügen um make_move ein bisschen übersichtlicher zu gestalten
         '''
         pass
-    
-
-    def swap_turns(self, turn_board):
-        if turn_board: time.sleep(0.5)
-        self.board.turn = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
 
 
     def make_move(self):
@@ -99,6 +101,14 @@ class Game():
                 winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
                 print(f"Check Mate! {winning_color.name} won!")
                 break
+    
+
+    def on_undo(self):
+        print("self.board.load_state(self.move.cached_boards[self.move.move-1])")
+
+
+    def on_redo(self):
+        print("self.board.load_state(self.move.cached_boards[self.move.move+1])")
 
 
     def game_loop_gui(self, turn_board, show_legal_moves, side = Color.WHITE):
