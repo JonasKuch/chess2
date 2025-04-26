@@ -13,12 +13,13 @@ import time
 
 
 class Game():
-    def __init__(self, in_gui = True, width = 700, height = 800):
+    def __init__(self, in_gui = True, width = 700, height = 800, with_takeback = True):
         self.board = Board()
-        self.gui = GameLoop(width, height, self.board, self.on_undo, self.on_redo)
+        self.gui = GameLoop(width, height, self.board, self.on_undo, self.on_redo, self.on_give_up)
         self.move = Move()
         self.in_gui = in_gui
         self.action = None
+        self.with_takeback = with_takeback
 
 
     def start_game(self, ):
@@ -104,6 +105,8 @@ class Game():
     
 
     def on_undo(self):
+        if not self.with_takeback:
+            return None
         if self.move.move_num < 1:
             return None
         self.move.move_num -= 1
@@ -121,8 +124,15 @@ class Game():
         self.move.move_cache[self.move.move_num] = self.board.clone()    # Wichtig, da sindt der nächste zug direkt auf das gerade initialisierte board angewendet werden würde bevor es gecached wird
 
 
+    def on_give_up(self):
+        winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
+        print(f"{self.board.turn.name} gave up! {winning_color.name} won!")
+        pygame.quit()
+        raise SystemExit
 
-    def game_loop_gui(self, turn_board, show_legal_moves, side = Color.WHITE):
+
+    def game_loop_gui(self, turn_board, show_legal_moves, side = Color.WHITE, with_takeback = True):
+        self.with_takeback = with_takeback
         self.start_game()
         self.move.cache_board_state(self.board)
 
@@ -132,10 +142,7 @@ class Game():
             if action == Action.MOVED:
                 self.swap_turns(turn_board)
                 self.move.cache_board_state(self.board)
-                # print(self.move.move_num)#####################
-                # for thing in list(self.move.move_cache.values()):
-                #     thing.print(side)
-                print(self.move.move_cache)
+
                 if self.board.check_if_mate():
                     winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
                     print(f"Check Mate! {winning_color.name} won!")
@@ -143,3 +150,4 @@ class Game():
                     raise SystemExit
 
             self.gui.tick(60)
+
