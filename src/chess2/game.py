@@ -7,6 +7,7 @@ from chess2.board import Board
 from chess2 import Color, Action
 from chess2.gui import GameLoop
 from chess2.move import Move
+from chess2.gui import Button
 import pygame
 import time
 
@@ -129,7 +130,7 @@ class Game():
         print(f"{self.board.turn.name} gave up! {winning_color.name} won!")
         pygame.quit()
         raise SystemExit
-
+    
 
     def game_loop_gui(self, turn_board, show_legal_moves, side = Color.WHITE, with_takeback = True):
         self.with_takeback = with_takeback
@@ -151,3 +152,28 @@ class Game():
 
             self.gui.tick(60)
 
+    def play(self):
+        self.game_loop_gui(turn_board=True, show_legal_moves=True)
+
+
+
+
+class StartScreen():
+    def __init__(self, window):
+        self.window = window
+        self.button_color = "burlywood3"
+        self.button_width = self.window.size/4
+        self.button_height = 0.8*self.window.width/8
+        self.play_bot = "OFF"
+        self.chosen_color = Color.WHITE
+        self.show_moves = "ON"
+        self.flip_board = "ON"
+        self.with_takeback = "ON"
+        self.buttons = [
+            Button(position=..., width=self.button_width, height=self.button_height, color=self.button_color, text=f"PLAY BOT:    {self.play_bot}", text_color="black", text_size=..., callback=...),
+            Button(position=..., width=self.button_width, height=self.button_height, color=self.button_color, text=f"SIDE:    {self.chosen_color.name}", text_color="black", text_size=..., callback=...),
+            Button(position=..., width=self.button_width, height=self.button_height, color=self.button_color, text=f"FLIP BOARD:    {self.flip_board}", text_color="black", text_size=..., callback=...),
+            Button(position=..., width=self.button_width, height=self.button_height, color=self.button_color, text=f"SHOW MOVES:    {self.show_moves}", text_color="black", text_size=..., callback=...),
+            Button(position=..., width=self.button_width, height=self.button_height, color=self.button_color, text=f"TAKEBACKS:    {self.with_takeback}", text_color="black", text_size=..., callback=...),
+            Button(position=..., width=self.button_width, height=self.button_height, color=self.button_color, text=f"START", text_color="black", text_size=..., callback=...),
+        ]
