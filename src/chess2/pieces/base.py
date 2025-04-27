@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from chess2 import Color, PieceType
+import copy
 
 
 
@@ -16,6 +17,16 @@ class Piece(ABC):
     def get_pseudo_legal_moves(self):
         pass
     
+    
+    def clone(self, new_board):
+        new_piece = self.__class__(None, None, None)
+        for attr, value in self.__dict__.items():
+            if attr == "board": 
+                setattr(new_piece, "board", new_board)
+                continue
+            setattr(new_piece, attr, copy.deepcopy(value))
+        return new_piece
+
     
     def move(self, end_position):
         if self._move_is_legal(end_position):

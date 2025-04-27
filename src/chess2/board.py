@@ -70,13 +70,27 @@ class Board():
         return (0 <= x <= 7 and 0 <= y <= 7)
     
 
-    def clone(self):   ############################ see chat gpt: jonas.a.kuch, object instance synchronisation
-        return copy.deepcopy(self)
+    def clone(self):
+        new_board = self.__class__()
+        new_board.turn = copy.deepcopy(self.turn)
+        for old_piece in self.pieces_on_board:
+            new_piece = old_piece.clone(new_board)
+            new_board.pieces_on_board.append(new_piece)
+            if new_piece.str == "K": new_board.white_king = new_piece
+            if new_piece.str == "k": new_board.black_king = new_piece
+        new_board.update_grid()
+        return new_board
     
 
-    def load_state(self, board):    ############################ see chat gpt: jonas.a.kuch, object instance synchronisation
-        for attribute in vars(board):
-            setattr(self, attribute, getattr(board, attribute))
+    def load_state(self, other_board):
+        self.__init__()
+        self.turn = copy.deepcopy(other_board.turn)
+        for other_piece in other_board.pieces_on_board:
+            new_piece = other_piece.clone(self)
+            self.pieces_on_board.append(new_piece)
+            if new_piece.str == "K": self.white_king = new_piece
+            if new_piece.str == "k": self.black_king = new_piece
+        self.update_grid()
     
 
     def get_squares_under_attack(self, color):
