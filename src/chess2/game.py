@@ -112,7 +112,6 @@ class Game():
         self.move.move_num -= 1
         other_board = self.move.load_board_state(self.move.move_num)
         self.board.load_state(other_board)
-        self.board.print(Color.WHITE)
         self.move.move_cache[self.move.move_num] = self.board.clone()    # Wichtig, da sindt der nächste zug direkt auf das gerade initialisierte board angewendet werden würde bevor es gecached wird
 
 
