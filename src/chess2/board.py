@@ -144,7 +144,7 @@ class Board():
     
 
     def update_checks(self):
-        # must be called after 
+        # must be called after update_grid
         self.white_king.in_check = True if self.is_under_attack(Color.WHITE) else False
         self.black_king.in_check = True if self.is_under_attack(Color.BLACK) else False
     
