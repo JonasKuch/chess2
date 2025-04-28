@@ -9,6 +9,8 @@ class PiecesRenderer():
         self.surface = window.screen
         self.board = board
         self.pieces_dir = pieces_dir
+        self.offset_x = (window.width - self.square_width*8)/2
+        self.offset_y = (window.height - self.square_width*8)/2
     
 
     def draw(self, side):
@@ -17,7 +19,7 @@ class PiecesRenderer():
             color_prefix = "w" if piece._color == Color.WHITE else "b"
             img_path = f"{self.pieces_dir}/{color_prefix}{piece.str}.png"
             img = pygame.transform.scale(pygame.image.load(img_path), (self.square_width, self.square_width))
-            pos = ( x*self.square_width, (7-y)*self.square_width ) if side == Color.WHITE else ( (7-x)*self.square_width, y*self.square_width ) 
+            pos = ( x*self.square_width + self.offset_x, (7-y)*self.square_width + self.offset_y ) if side == Color.WHITE else ( (7-x)*self.square_width + self.offset_x, y*self.square_width + self.offset_y ) 
             if not piece._captured: self.surface.blit(img, pos)
     
 
@@ -34,7 +36,7 @@ class PiecesRenderer():
         legal_moves = piece.get_legal_moves()
         for move in legal_moves:
             x, y = move
-            pos = ( x*self.square_width+offset, (7-y)*self.square_width+offset) if side == Color.WHITE else ( (7-x)*self.square_width+offset, y*self.square_width+offset ) 
+            pos = ( x*self.square_width+offset+self.offset_x, (7-y)*self.square_width+offset+self.offset_y) if side == Color.WHITE else ( (7-x)*self.square_width+offset+self.offset_x, y*self.square_width+offset+self.offset_y) 
 
             # Create a temporary surface for the transparent circle
             circle_surf = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)

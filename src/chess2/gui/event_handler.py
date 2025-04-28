@@ -12,6 +12,8 @@ class EventHandler():
         self.valid_moves = None
         self.square_width = 0.8*window.width / 8
         self.board = board
+        self.offset_x = (window.width - self.square_width*8)/2
+        self.offset_y = (window.height - self.square_width*8)/2
     
 
     def quit_game(self, event):
@@ -29,11 +31,11 @@ class EventHandler():
     def _convert_mouse_position(self, position, side): ####### evtl für Color.BLACK muss y nicht invertiert werden
         x, y = position
         if side == Color.WHITE:
-            x_board = int(x / self.square_width)
-            y_board = 7 - int(y / self.square_width)
+            x_board = int((x-self.offset_x) / self.square_width)
+            y_board = 7 - int((y-self.offset_y) / self.square_width)
         if side == Color.BLACK:
-            x_board = 7 - int(x / self.square_width)
-            y_board = int(y / self.square_width)
+            x_board = 7 - int((x-self.offset_x) / self.square_width)
+            y_board = int((y-self.offset_y) / self.square_width)
 
         if not self.board.in_bounds((x_board, y_board)):
             return None

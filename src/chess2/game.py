@@ -155,4 +155,7 @@ class Game():
 
     def play(self):
         self.start_screen.start_screen_loop()
-        self.game_loop_gui(turn_board=True, show_legal_moves=True)
+        self.game_loop_gui(turn_board=self.start_screen.flip_board, 
+                           show_legal_moves=self.start_screen.show_moves,
+                           side=self.start_screen.chosen_color,
+                           with_takeback=self.start_screen.with_takeback)
