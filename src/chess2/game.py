@@ -6,7 +6,7 @@ this module handles metadata, like checkmate, or which player is to turn and imp
 from chess2.board import Board
 from chess2 import Color, Action
 from chess2.gui import GameLoop
-from chess2.gui import StartScreen
+from chess2.gui import StartScreen, EndScreen
 from chess2.move import Move
 import pygame
 import time
@@ -19,9 +19,12 @@ class Game():
         self.gui = GameLoop(width, height, self.board, self.on_undo, self.on_redo, self.on_give_up)
         self.move = Move()
         self.start_screen = StartScreen(self.gui.window)
+        self.end_screen = EndScreen(self.gui.window)
         self.in_gui = in_gui
         self.action = None
         self.with_takeback = with_takeback
+        self.winning_color = None
+        self.running = True
 
 
     def translate_input(self, input_string):
@@ -127,10 +130,8 @@ class Game():
 
 
     def on_give_up(self):
-        winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
-        print(f"{self.board.turn.name} gave up! {winning_color.name} won!")
-        pygame.quit()
-        raise SystemExit
+        self.winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
+        self.running = False
     
 
     def game_loop_gui(self, turn_board, show_legal_moves, side = Color.WHITE, with_takeback = True):
@@ -138,7 +139,7 @@ class Game():
         self.start_game()
         self.move.cache_board_state(self.board)
 
-        while True:
+        while self.running:
             action = self.gui.gameloop(turn = self.board.turn, side = self.board.turn if turn_board else side, show_legal_moves = show_legal_moves)
 
             if action == Action.MOVED:
@@ -146,16 +147,26 @@ class Game():
                 self.move.cache_board_state(self.board)
 
                 if self.board.check_if_mate():
-                    winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
-                    print(f"Check Mate! {winning_color.name} won!")
-                    pygame.quit()
-                    raise SystemExit
+                    self.winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
+                    self.running = False
 
             self.gui.tick(60)
 
+
+    def reset_all_properties(self):
+        self.start_screen.running = True
+        self.board.__init__()
+        self.move.__init__()
+        self.running = True
+        self.winning_color = None
+        self.end_screen.running = True
+
     def play(self):
-        self.start_screen.start_screen_loop()
-        self.game_loop_gui(turn_board=self.start_screen.flip_board, 
-                           show_legal_moves=self.start_screen.show_moves,
-                           side=self.start_screen.chosen_color,
-                           with_takeback=self.start_screen.with_takeback)
+        while True:            
+            self.start_screen.start_screen_loop()
+            self.game_loop_gui(turn_board=self.start_screen.flip_board, 
+                            show_legal_moves=self.start_screen.show_moves,
+                            side=self.start_screen.chosen_color,
+                            with_takeback=self.start_screen.with_takeback)
+            self.end_screen.end_screen_loop(self.winning_color, self.board)
+            self.reset_all_properties()

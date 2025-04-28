@@ -17,10 +17,10 @@ class StartScreen():
         self.running = True
 
         self.start_window_width = self.window.width*0.7
-        self.start_window_height = self.window.height*0.7
+        self.start_window_height = self.window.height*0.8
         self.start_window_color = "darkolivegreen3"
-        self.start_window_left = self.window.width*0.15
-        self.start_window_top = self.window.height*0.15
+        self.start_window_left = (self.window.width-self.start_window_width)/2
+        self.start_window_top = (self.window.height-self.start_window_height)/2
 
         self.button_width = self.window.width/1.5
         self.button_height = 0.8*self.window.width/8
