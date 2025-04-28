@@ -1,5 +1,5 @@
 from chess2.gui import Window, BoardRenderer, PiecesRenderer, Button, EventHandler
-from chess2 import Color
+from chess2 import Color, Action
 from chess2.board import Board
 import pygame
 
@@ -14,6 +14,7 @@ class StartScreen():
         self.board.initialize()
         self.pieces_renderer = PiecesRenderer(self.window, self.board)
         self.event_handler = EventHandler(self.window, self.board)
+        self.running = True
 
         self.start_window_width = self.window.width*0.7
         self.start_window_height = self.window.height*0.7
@@ -21,10 +22,8 @@ class StartScreen():
         self.start_window_left = self.window.width*0.15
         self.start_window_top = self.window.height*0.15
 
-        self.button_width = self.window.width/4
+        self.button_width = self.window.width/1.5
         self.button_height = 0.8*self.window.width/8
-        self.button_left = self.start_window_left + (self.start_window_width - self.button_width)/2
-        self.button_top = self.start_window_top + 10
         self.button_color = "burlywood3"
         self.play_bot = False
         self.chosen_color = Color.WHITE
@@ -32,28 +31,71 @@ class StartScreen():
         self.flip_board = True
         self.with_takeback = True
         self.buttons = [
-            Button(position=(self.button_left, self.button_top), width=self.button_width, height=self.button_height, color=self.button_color, text=f"PLAY BOT:    {"ON" if self.play_bot else "OFF"}", text_color="black", text_size=int(self.button_height), callback=lambda y: None),
-            Button(position=(self.button_left, 2*self.button_top + self.button_height/4), width=self.button_width, height=self.button_height, color=self.button_color, text=f"SIDE:    {"ON" if self.chosen_color.name else "OFF"}", text_color="black", text_size=int(self.button_height/2), callback=lambda y: None),
-            Button(position=(self.button_left, 3*self.button_top + 2*self.button_height/4), width=self.button_width, height=self.button_height, color=self.button_color, text=f"FLIP BOARD:    {"ON" if self.flip_board else "OFF"}", text_color="black", text_size=int(self.button_height/2), callback=lambda y: None),
-            Button(position=(self.button_left, 4*self.button_top + 3*self.button_height/4), width=self.button_width, height=self.button_height, color=self.button_color, text=f"SHOW MOVES:    {"ON" if self.show_moves else "OFF"}", text_color="black", text_size=int(self.button_height/2), callback=lambda y: None),
-            Button(position=(self.button_left, 5*self.button_top + 4*self.button_height/4), width=self.button_width, height=self.button_height, color=self.button_color, text=f"TAKEBACKS:    {"ON" if self.with_takeback else "OFF"}", text_color="black", text_size=int(self.button_height/2), callback=lambda y: None),
-            Button(position=(self.button_left, 6*self.button_top + 5*self.button_height/4), width=self.button_width, height=self.button_height, color=self.button_color, text=f"START", text_color="black", text_size=int(self.button_height/2), callback=lambda y: None),
+            Button(position=(0, 0), width=self.button_width, height=self.button_height, color=self.button_color, text=f"", text_color="black", text_size=int(self.button_height/2), callback=self.on_play_bot),
+            Button(position=(0, 0), width=self.button_width, height=self.button_height, color=self.button_color, text=f"", text_color="black", text_size=int(self.button_height/2), callback=self.on_chose_side),
+            Button(position=(0, 0), width=self.button_width, height=self.button_height, color=self.button_color, text=f"", text_color="black", text_size=int(self.button_height/2), callback=self.on_flip_board),
+            Button(position=(0, 0), width=self.button_width, height=self.button_height, color=self.button_color, text=f"", text_color="black", text_size=int(self.button_height/2), callback=self.on_show_moves),
+            Button(position=(0, 0), width=self.button_width, height=self.button_height, color=self.button_color, text=f"", text_color="black", text_size=int(self.button_height/2), callback=self.on_takebacks),
+            Button(position=(0, 0), width=self.button_width, height=self.button_height, color="chartreuse4", text=f"START", text_color="black", text_size=int(self.button_height/2), callback=self.on_start),
         ]
     
 
     def draw_background(self):
         alpha = 150  # 75% transparent
 
-        backgrond_surf  = pygame.Surface((self.window.width, self.window.height), pygame.SRCALPHA)
+        background_surf  = pygame.Surface((self.window.width, self.window.height), pygame.SRCALPHA)
         background_color = (0, 0, 0, alpha)
         rect = pygame.Rect(0, 0, self.window.width, self.window.height)
-        pygame.draw.rect(backgrond_surf, background_color, rect)
-        self.surface.blit(backgrond_surf, (0, 0))
+        pygame.draw.rect(background_surf, background_color, rect)
+        self.surface.blit(background_surf, (0, 0))
     
 
     def draw_buttons(self):
-        for button in self.buttons:
+        space = (self.start_window_height - 6*self.button_height)/7
+        top = self.start_window_top + space
+        left = self.start_window_left + (self.start_window_width - self.button_width)/2
+        for i, button in enumerate(self.buttons):
+            button.set_position((left, top + (self.button_height+space)*i))
+            self.update_buttons_text()
             button.draw(self.surface)
+    
+
+    def update_buttons_text(self):
+        self.buttons[0].set_text(f"PLAY BOT: {'ON' if self.play_bot else 'OFF'}")
+        self.buttons[1].set_text(f"SIDE: {self.chosen_color.name}")
+        self.buttons[2].set_text(f"FLIP BOARD: {'ON' if self.flip_board else 'OFF'}")
+        self.buttons[3].set_text(f"SHOW MOVES: {'ON' if self.show_moves else 'OFF'}")
+        self.buttons[4].set_text(f"TAKEBACKS: {'ON' if self.with_takeback else 'OFF'}")
+        self.buttons[5].set_text(f"START")
+
+
+    def on_play_bot(self):
+        self.play_bot = not self.play_bot
+        return None
+
+
+    def on_chose_side(self):
+        self.chosen_color = Color.BLACK if self.chosen_color == Color.WHITE else Color.WHITE
+        return None
+
+
+    def on_flip_board(self):
+        self.flip_board = not self.flip_board
+        return None
+
+    
+    def on_show_moves(self):
+        self.show_moves = not self.show_moves
+        return None
+
+
+    def on_takebacks(self):
+        self.with_takeback = not self.with_takeback
+        return "yes"
+
+    
+    def on_start(self):
+        self.running = False
 
 
     def draw_start_window(self):
@@ -63,9 +105,11 @@ class StartScreen():
 
     def start_screen_loop(self):
         clock = pygame.time.Clock()
-        while True:
+        while self.running:
             event = pygame.event.wait()
             self.event_handler.quit_game(event)
+            for button in self.buttons:
+                button.handle_event(event)
 
             self.window.draw()
             self.board_renderer.draw()

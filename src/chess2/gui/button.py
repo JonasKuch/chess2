@@ -18,6 +18,16 @@ class Button():
 
     def is_hovered(self):
         return self.rect.collidepoint(pygame.mouse.get_pos())
+    
+
+    def set_position(self, new_pos):
+        self.x, self.y = new_pos
+        self.rect = pygame.Rect(self.x, self.y, self.width, self.height)
+
+    def set_text(self, new_text):
+        self.text = new_text
+        self._rendered_text = self.font.render(self.text, True, self.text_color)
+        self._text_rect = self._rendered_text.get_rect(center=self.rect.center)
 
 
     def draw(self, surface):
