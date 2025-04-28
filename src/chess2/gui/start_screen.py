@@ -21,21 +21,23 @@ class StartScreen():
         self.start_window_left = self.window.width*0.15
         self.start_window_top = self.window.height*0.15
 
-        self.button_color = "burlywood3"
         self.button_width = self.window.width/4
         self.button_height = 0.8*self.window.width/8
+        self.button_left = self.start_window_left + (self.start_window_width - self.button_width)/2
+        self.button_top = self.start_window_top + 10
+        self.button_color = "burlywood3"
         self.play_bot = False
         self.chosen_color = Color.WHITE
         self.show_moves = True
         self.flip_board = True
         self.with_takeback = True
         self.buttons = [
-            Button(position=..., width=self.button_width, height=self.button_height, color=self.button_color, text=f"PLAY BOT:    {"ON" if self.play_bot else "OFF"}", text_color="black", text_size=..., callback=...),
-            Button(position=..., width=self.button_width, height=self.button_height, color=self.button_color, text=f"SIDE:    {"ON" if self.chosen_color.name else "OFF"}", text_color="black", text_size=..., callback=...),
-            Button(position=..., width=self.button_width, height=self.button_height, color=self.button_color, text=f"FLIP BOARD:    {"ON" if self.flip_board else "OFF"}", text_color="black", text_size=..., callback=...),
-            Button(position=..., width=self.button_width, height=self.button_height, color=self.button_color, text=f"SHOW MOVES:    {"ON" if self.show_moves else "OFF"}", text_color="black", text_size=..., callback=...),
-            Button(position=..., width=self.button_width, height=self.button_height, color=self.button_color, text=f"TAKEBACKS:    {"ON" if self.with_takeback else "OFF"}", text_color="black", text_size=..., callback=...),
-            Button(position=..., width=self.button_width, height=self.button_height, color=self.button_color, text=f"START", text_color="black", text_size=..., callback=...),
+            Button(position=(self.button_left, self.button_top), width=self.button_width, height=self.button_height, color=self.button_color, text=f"PLAY BOT:    {"ON" if self.play_bot else "OFF"}", text_color="black", text_size=int(self.button_height), callback=lambda y: None),
+            Button(position=(self.button_left, 2*self.button_top + self.button_height/4), width=self.button_width, height=self.button_height, color=self.button_color, text=f"SIDE:    {"ON" if self.chosen_color.name else "OFF"}", text_color="black", text_size=int(self.button_height/2), callback=lambda y: None),
+            Button(position=(self.button_left, 3*self.button_top + 2*self.button_height/4), width=self.button_width, height=self.button_height, color=self.button_color, text=f"FLIP BOARD:    {"ON" if self.flip_board else "OFF"}", text_color="black", text_size=int(self.button_height/2), callback=lambda y: None),
+            Button(position=(self.button_left, 4*self.button_top + 3*self.button_height/4), width=self.button_width, height=self.button_height, color=self.button_color, text=f"SHOW MOVES:    {"ON" if self.show_moves else "OFF"}", text_color="black", text_size=int(self.button_height/2), callback=lambda y: None),
+            Button(position=(self.button_left, 5*self.button_top + 4*self.button_height/4), width=self.button_width, height=self.button_height, color=self.button_color, text=f"TAKEBACKS:    {"ON" if self.with_takeback else "OFF"}", text_color="black", text_size=int(self.button_height/2), callback=lambda y: None),
+            Button(position=(self.button_left, 6*self.button_top + 5*self.button_height/4), width=self.button_width, height=self.button_height, color=self.button_color, text=f"START", text_color="black", text_size=int(self.button_height/2), callback=lambda y: None),
         ]
     
 
@@ -49,9 +51,9 @@ class StartScreen():
         self.surface.blit(backgrond_surf, (0, 0))
     
 
-    # def draw_buttons(self):
-    #     for button in self.buttons:
-    #         button.draw()
+    def draw_buttons(self):
+        for button in self.buttons:
+            button.draw(self.surface)
 
 
     def draw_start_window(self):
@@ -70,6 +72,7 @@ class StartScreen():
             self.pieces_renderer.draw(Color.WHITE)
             self.draw_background()
             self.draw_start_window()
+            self.draw_buttons()
 
             self.window.update()
             clock.tick(60)
