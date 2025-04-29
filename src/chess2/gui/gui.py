@@ -26,7 +26,7 @@ class GameLoop():
         self.buttons_game = [
             Button((self.square_width / 2 + self.offset_x, self.square_width * 8.25 + self.offset_y), self.button_size, self.button_size, self.button_color, "<", "black", self.button_size, on_undo),
             Button((self.square_width * 1.5 + self.offset_x, self.square_width * 8.25 + self.offset_y), self.button_size, self.button_size, self.button_color, ">", "black", self.button_size, on_redo),
-            Button((self.square_width * 6 + self.offset_x, self.square_width * 8.25 + self.offset_y), 2*self.button_size, self.button_size, self.button_color, "GIVE UP", "black", int(self.button_size*0.5), on_give_up)
+            Button((self.square_width * 6 + self.offset_x, self.square_width * 8.25 + self.offset_y), 2*self.button_size, self.button_size, "brown3", "GIVE UP", "black", int(self.button_size*0.5), on_give_up)
         ]
         self.promotion_buttons = []
         self.event_handler = EventHandler(self.window, board)

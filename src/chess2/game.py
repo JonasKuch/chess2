@@ -24,6 +24,7 @@ class Game():
         self.action = None
         self.with_takeback = with_takeback
         self.running = True
+        self.message = None
 
 
     def translate_input(self, input_string):
@@ -129,28 +130,33 @@ class Game():
 
 
     def on_give_up(self):
-        self.winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
+        winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
+        self.message = f"{self.board.turn.name} GAVE UP! {winning_color.name} WON!"
         self.running = False
 
     
     def check_for_end(self):
         if self.board.check_if_mate():
             winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
+            self.message = f"CHECK MATE! {winning_color.name} WON!"
             self.running = False
-            return f"CHECK MATE! {winning_color.name} WON!"
+            return
 
         if any(count == 3 for count in self.move.repetition_counter.values()):
+            self.message = "DRAW DUE TO MOVE REPETITION"
             self.running = False
-            return "DRAW DUE TO MOVE REPETITION"
+            return
 
 
         if self.board.halfmove_clock >= 100:
+            self.message = "50 MOVE RULE DRAW"
             self.running = False
-            return "50 MOVE RULE DRAW"
+            return
 
         if self.board.get_possible_moves_of_all_pieces(self.board.turn) == []:
+            self.message = "STALEMATE"
             self.running = False
-            return "STALEMATE"
+            return
     
 
     def game_loop_gui(self, play_bot , turn_board, show_legal_moves, side = Color.WHITE, with_takeback = True):
@@ -165,11 +171,12 @@ class Game():
                 self.swap_turns(turn_board)
                 self.move.cache_board_state(self.board)
 
-                message = self.check_for_end()
-                if message: return message
+                self.check_for_end()
 
                 if play_bot:
                     pass #self.bot.move, message = self.check_for_end() return message
+            
+            if self.message: return self.message
 
             self.gui.tick(60)
 
@@ -178,6 +185,7 @@ class Game():
         self.board.__init__()
         self.move.__init__()
         self.running = True
+        self.message = None
         self.start_screen.running = True
         self.end_screen.running = True
 
