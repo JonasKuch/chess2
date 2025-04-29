@@ -5,6 +5,8 @@ from enum import Enum
 class Color(Enum):
     WHITE = "White"
     BLACK = "Black"
+    DRAW = "Draw"
+    STALEMATE = "Stalemate"
 
 
 

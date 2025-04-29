@@ -203,7 +203,7 @@ class Board():
         # En passant square
         en_passant = '-'
         for piece in self.pieces_on_board:
-            if isinstance(piece, Pawn) and piece.en_passant_vulnerability and not piece._captured:
+            if isinstance(piece, Pawn) and piece._en_passant_vulnerability and not piece._captured:
                 x, y = piece._position
                 # Determine the square behind the pawn (from the opponent's perspective)
                 target_y = y - 1 if piece._color == Color.WHITE else y + 1

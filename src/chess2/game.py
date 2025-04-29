@@ -150,6 +150,18 @@ class Game():
                     self.winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
                     self.running = False
 
+                if any(count == 3 for count in self.move.repetition_counter.values()):
+                    self.winning_color = Color.DRAW
+                    self.running = False
+
+                if self.board.halfmove_clock >= 100:
+                    self.winning_color = Color.DRAW
+                    self.running = False
+
+                if self.board.get_possible_moves_of_all_pieces(self.board.turn) == []:
+                    self.winning_color = Color.STALEMATE
+                    self.running = False
+
             self.gui.tick(60)
 
 
