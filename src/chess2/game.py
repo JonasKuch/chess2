@@ -131,9 +131,29 @@ class Game():
     def on_give_up(self):
         self.winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
         self.running = False
+
+    
+    def check_for_end(self):
+        if self.board.check_if_mate():
+            winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
+            self.running = False
+            return f"CHECK MATE! {winning_color.name} WON!"
+
+        if any(count == 3 for count in self.move.repetition_counter.values()):
+            self.running = False
+            return "DRAW DUE TO MOVE REPETITION"
+
+
+        if self.board.halfmove_clock >= 100:
+            self.running = False
+            return "50 MOVE RULE DRAW"
+
+        if self.board.get_possible_moves_of_all_pieces(self.board.turn) == []:
+            self.running = False
+            return "STALEMATE"
     
 
-    def game_loop_gui(self, turn_board, show_legal_moves, side = Color.WHITE, with_takeback = True):
+    def game_loop_gui(self, play_bot , turn_board, show_legal_moves, side = Color.WHITE, with_takeback = True):
         self.with_takeback = with_takeback
         self.start_game()
         self.move.cache_board_state(self.board)
@@ -145,23 +165,11 @@ class Game():
                 self.swap_turns(turn_board)
                 self.move.cache_board_state(self.board)
 
-                if self.board.check_if_mate():
-                    winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
-                    self.running = False
-                    return f"CHECK MATE! {winning_color.name} WON!"
+                message = self.check_for_end()
+                if message: return message
 
-                if any(count == 3 for count in self.move.repetition_counter.values()):
-                    self.running = False
-                    return f"DRAW DUE TO MOVE REPETITION"
-
-
-                if self.board.halfmove_clock >= 100:
-                    self.running = False
-                    return f"50 MOVE RULE DRAW"
-
-                if self.board.get_possible_moves_of_all_pieces(self.board.turn) == []:
-                    self.running = False
-                    return "STALEMATE"
+                if play_bot:
+                    pass #self.bot.move, message = self.check_for_end() return message
 
             self.gui.tick(60)
 
@@ -176,9 +184,10 @@ class Game():
     def play(self):
         while True:            
             self.start_screen.start_screen_loop()
-            message = self.game_loop_gui(turn_board=self.start_screen.flip_board, 
-                            show_legal_moves=self.start_screen.show_moves,
-                            side=self.start_screen.chosen_color,
-                            with_takeback=self.start_screen.with_takeback)
+            message = self.game_loop_gui(play_bot=self.start_screen.play_bot, 
+                                         turn_board=self.start_screen.flip_board, 
+                                         show_legal_moves=self.start_screen.show_moves,
+                                         side=self.start_screen.chosen_color,
+                                         with_takeback=self.start_screen.with_takeback)
             self.end_screen.end_screen_loop(message, self.board)
             self.reset_all_properties()
