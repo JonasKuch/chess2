@@ -99,7 +99,7 @@ class Game():
                 break
     
 
-    def start_game(self, ):
+    def start_game(self):
         self.board.initialize()
         if not self.in_gui: self.board.print(self.board.turn)
     

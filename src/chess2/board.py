@@ -13,6 +13,8 @@ class Board():
         self.white_king = None
         self.turn = Color.WHITE
         self.pieces_on_board = []
+        self.halfmove_clock = 0
+        self.fullmove_clock = 1
     
     
     def setup_pieces(self, color):
@@ -162,6 +164,65 @@ class Board():
                     break
         return in_check and not has_moves
     
+
+    def to_fen(self): # except the half move and full move thing so far
+        fen_rows = []
+
+        for y in range(7, -1, -1):
+            empty_count = 0
+            fen_row = ''
+            for x in range(8):
+                piece = self.grid[y][x]
+                if piece is None:
+                    empty_count += 1
+                else:
+                    if empty_count > 0:
+                        fen_row += str(empty_count)
+                        empty_count = 0
+                    fen_row += piece.str
+            if empty_count > 0:
+                fen_row += str(empty_count)
+            fen_rows.append(fen_row)
+
+        piece_placement = '/'.join(fen_rows)
+        active_color = 'w' if self.turn == Color.WHITE else 'b'
+
+        # Castling rights
+        castling = ''
+        if not self.white_king.castelling_square_under_attack_kingside and self.white_king.can_castle_kingside:
+            castling += 'K'
+        if not self.white_king.castelling_square_under_attack_queenside and self.white_king.can_castle_queenside:
+            castling += 'Q'
+        if not self.black_king.castelling_square_under_attack_kingside and self.black_king.can_castle_kingside:
+            castling += 'k'
+        if not self.black_king.castelling_square_under_attack_queenside and self.black_king.can_castle_queenside:
+            castling += 'q'
+        if not castling:
+            castling = '-'
+
+        # En passant square
+        en_passant = '-'
+        for piece in self.pieces_on_board:
+            if isinstance(piece, Pawn) and piece.en_passant_vulnerability and not piece._captured:
+                x, y = piece._position
+                # Determine the square behind the pawn (from the opponent's perspective)
+                target_y = y - 1 if piece._color == Color.WHITE else y + 1
+                if 0 <= target_y <= 7:
+                    file = chr(ord('a') + x)
+                    rank = str(target_y + 1)
+                    en_passant = file + rank
+                break  # Only one pawn can be vulnerable to en passant at a time
+
+
+        fen = f"{piece_placement} {active_color} {castling} {en_passant} {self.halfmove_clock} {self.fullmove_clock}"
+        return fen
+
+
+    def get_repetition_key(self):
+        fen = self.to_fen()
+        key = ' '.join(fen.split(' ')[:4])
+        return key
+
 
     def manage_castelling_squares_under_attack(self):
         castelling_squares_white_kingside = [(4, 0), (5, 0), (6, 0)]

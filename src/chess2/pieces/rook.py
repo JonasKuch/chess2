@@ -37,6 +37,7 @@ class Rook(Piece):
             if not self.board.is_empty(end_position): 
                 x, y = end_position
                 self.board.grid[y][x]._captured = True
+                self.board.halfmove_clock = 0
             self._position = end_position
             self._has_moved = True
             self.reset_en_passant_vulnerabiity()
@@ -49,3 +50,6 @@ class Rook(Piece):
             if start_x == 0:
                 if self._color == Color.WHITE: self.board.white_king.can_castle_queenside = False
                 if self._color == Color.BLACK: self.board.black_king.can_castle_queenside = False
+            
+            if self._color == Color.BLACK:
+                self.board.fullmove_clock += 1

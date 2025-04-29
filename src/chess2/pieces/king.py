@@ -48,6 +48,7 @@ class King(Piece):
         if self._move_is_legal(end_position):
             if not self.board.is_empty(end_position): 
                 self.board.grid[y_new][x_new]._captured = True
+                self.board.halfmove_clock = 0
             self.reset_en_passant_vulnerabiity()
             self._position = end_position
             self._has_moved = True
@@ -64,3 +65,6 @@ class King(Piece):
             if x_new-x_pos == 2:
                 self.board.grid[ground_line][7]._has_moved = True 
                 self.board.grid[ground_line][7]._position = (5, ground_line)
+            
+            if self._color == Color.BLACK:
+                self.board.fullmove_clock += 1

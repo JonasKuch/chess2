@@ -66,3 +66,6 @@ class Pawn(Piece):
             self._position = end_position
             self._has_moved = True
             self.board.manage_castelling_squares_under_attack()
+            self.board.halfmove_clock = 0
+            if self._color == Color.BLACK:
+                self.board.fullmove_clock += 1

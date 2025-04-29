@@ -33,10 +33,13 @@ class Piece(ABC):
             if not self.board.is_empty(end_position): 
                 x, y = end_position
                 self.board.grid[y][x]._captured = True
+                self.board.halfmove_clock = 0
             self._position = end_position
             self._has_moved = True
             self.reset_en_passant_vulnerabiity()
             self.board.manage_castelling_squares_under_attack()
+            if self._color == Color.BLACK:
+                self.board.fullmove_clock += 1
 
 
     def get_legal_moves(self):
