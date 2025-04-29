@@ -149,10 +149,12 @@ class Board():
         self.black_king.in_check = True if self.is_under_attack(Color.BLACK) else False
     
 
-    def check_if_mate(self):
+    def check_if_mate(self, color=None):
         # must be called after update_checks and after update_grid
+        if not color: color = self.turn
+
         has_moves = False
-        in_check = self.white_king.in_check if self.turn == Color.WHITE else self.black_king.in_check
+        in_check = self.white_king.in_check if color == Color.WHITE else self.black_king.in_check
         for piece in self.pieces_on_board:
             if not piece._captured and piece._color == self.turn:
                 if not piece.get_legal_moves() == []:

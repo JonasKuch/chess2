@@ -74,6 +74,8 @@ class EventHandler():
         if (x_board, y_board) in self.valid_moves:
             self.board.grid[y_selected][x_selected].move((x_board, y_board))
             self._reset_attributes()
+
+            # 4.1) Pawn promotion
             if isinstance(self.board.grid[y_selected][x_selected], Pawn) and y_board in [0, 7]:
                 self.board.update_grid()
                 self.board.grid[y_board][x_board]._captured = True
