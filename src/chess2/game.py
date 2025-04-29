@@ -19,11 +19,10 @@ class Game():
         self.gui = GameLoop(width, height, self.board, self.on_undo, self.on_redo, self.on_give_up)
         self.move = Move()
         self.start_screen = StartScreen(self.gui.window)
-        self.end_screen = EndScreen(self.gui.window)
+        self.end_screen = EndScreen(self.gui.window, self.start_screen)
         self.in_gui = in_gui
         self.action = None
         self.with_takeback = with_takeback
-        self.winning_color = None
         self.running = True
 
 
@@ -147,38 +146,39 @@ class Game():
                 self.move.cache_board_state(self.board)
 
                 if self.board.check_if_mate():
-                    self.winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
+                    winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
                     self.running = False
+                    return f"CHECK MATE! {winning_color.name} WON!"
 
                 if any(count == 3 for count in self.move.repetition_counter.values()):
-                    self.winning_color = Color.DRAW
                     self.running = False
+                    return f"DRAW DUE TO MOVE REPETITION"
+
 
                 if self.board.halfmove_clock >= 100:
-                    self.winning_color = Color.DRAW
                     self.running = False
+                    return f"50 MOVE RULE DRAW"
 
                 if self.board.get_possible_moves_of_all_pieces(self.board.turn) == []:
-                    self.winning_color = Color.STALEMATE
                     self.running = False
+                    return "STALEMATE"
 
             self.gui.tick(60)
 
 
     def reset_all_properties(self):
-        self.start_screen.running = True
         self.board.__init__()
         self.move.__init__()
         self.running = True
-        self.winning_color = None
+        self.start_screen.running = True
         self.end_screen.running = True
 
     def play(self):
         while True:            
             self.start_screen.start_screen_loop()
-            self.game_loop_gui(turn_board=self.start_screen.flip_board, 
+            message = self.game_loop_gui(turn_board=self.start_screen.flip_board, 
                             show_legal_moves=self.start_screen.show_moves,
                             side=self.start_screen.chosen_color,
                             with_takeback=self.start_screen.with_takeback)
-            self.end_screen.end_screen_loop(self.winning_color, self.board)
+            self.end_screen.end_screen_loop(message, self.board)
             self.reset_all_properties()

@@ -6,12 +6,12 @@ import pygame
 
 
 class EndScreen():
-    def __init__(self, window):
+    def __init__(self, window, start_screen):
+        self.start_screen = start_screen
         self.window = window
         self.surface = window.screen
-        self.board = None
         self.board_renderer = BoardRenderer(self.window)
-        self.event_handler = EventHandler(self.window, self.board)
+        self.event_handler = EventHandler(self.window, None)
         self.end_window_width = self.window.width*0.7
         self.end_window_height = self.window.height*0.5
         self.end_window_color = "darkolivegreen3"
@@ -42,14 +42,14 @@ class EndScreen():
             button.draw(self.surface)
 
 
-    def draw_end_window(self, winner):
+    def draw_end_window(self, message):
         rect = pygame.Rect(self.end_window_left, self.end_window_top, self.end_window_width, self.end_window_height)
         pygame.draw.rect(self.surface, self.end_window_color, rect)
 
         # Draw the "CHECK MATE!" text
         font_size = int(self.button_height / 2)
         font = pygame.font.Font("src/chess2/gui/fonts/Roboto-Regular.ttf", font_size)
-        text = font.render(f"CHECK MATE! {winner.name} WON!", True, (0, 0, 0))
+        text = font.render(f"{message}", True, (0, 0, 0))
         text_rect = text.get_rect(center=(self.end_window_left + self.end_window_width/2, self.end_window_top + self.end_window_height/2 - 30))
         self.surface.blit(text, text_rect)
 
@@ -58,9 +58,13 @@ class EndScreen():
         self.running = False
 
     
-    def end_screen_loop(self, winner, board):
+    def end_screen_loop(self, message, board):
         pieces_renderer = PiecesRenderer(self.window, board)
         clock = pygame.time.Clock()
+        if self.start_screen.flip_board:
+            side = Color.BLACK if board.turn == Color.WHITE else Color.WHITE
+        else:
+            side = self.start_screen.chosen_color
         while self.running:
             event = pygame.event.wait()
             self.event_handler.quit_game(event)
@@ -68,9 +72,9 @@ class EndScreen():
                 button.handle_event(event)
             self.window.draw()
             self.board_renderer.draw()
-            pieces_renderer.draw(winner)
+            pieces_renderer.draw(side)
             self.draw_background()
-            self.draw_end_window(winner)
+            self.draw_end_window(message)
             self.draw_buttons()
 
             self.window.update()
