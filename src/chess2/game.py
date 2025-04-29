@@ -142,7 +142,7 @@ class Game():
         while self.running:
             action = self.gui.gameloop(turn = self.board.turn, side = self.board.turn if turn_board else side, show_legal_moves = show_legal_moves)
 
-            if action == Action.MOVED:
+            if action == Action.MOVED or action == Action.PROMOTE:
                 self.swap_turns(turn_board)
                 self.move.cache_board_state(self.board)
 

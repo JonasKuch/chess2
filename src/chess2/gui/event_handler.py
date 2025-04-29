@@ -1,6 +1,7 @@
 from chess2.gui import Window
 from chess2.board import Board
 from chess2 import Color
+from chess2.pieces import Pawn
 import pygame
 from chess2 import Action
 
@@ -14,6 +15,7 @@ class EventHandler():
         self.board = board
         self.offset_x = (window.width - self.square_width*8)/2
         self.offset_y = (window.height - self.square_width*8)/2
+        self.pawn_position = None
     
 
     def quit_game(self, event):
@@ -26,6 +28,7 @@ class EventHandler():
         self.selected_pos = None
         self.selected_piece = None
         self.valid_moves = None
+        self.pawn_position = None
 
 
     def _convert_mouse_position(self, position, side): ####### evtl für Color.BLACK muss y nicht invertiert werden
@@ -71,6 +74,10 @@ class EventHandler():
         if (x_board, y_board) in self.valid_moves:
             self.board.grid[y_selected][x_selected].move((x_board, y_board))
             self._reset_attributes()
+            if isinstance(self.board.grid[y_selected][x_selected], Pawn) and y_board in [0, 7]:
+                self.board.grid[y_selected][x_selected]._captured = True
+                self.pawn_position = board_pos
+                return Action.PROMOTE
             return Action.MOVED
         
         # 5) Click wasn’t a legal move → maybe re-select another of yours
@@ -95,6 +102,3 @@ class EventHandler():
         self.handle_buttons_game(buttons, event)
         action = self.handle_board_input(event, turn_color, side)
         return action
-
-    def pawn_promotion(self, board):
-        pass

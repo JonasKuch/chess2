@@ -21,4 +21,4 @@ class Action(Enum):
     MOVED = "moved"
     IGNORED = "ignored"
     SELECTED = "selected"
-    START_GAME = "start game"
+    PROMOTE = "promote"
