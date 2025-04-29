@@ -30,8 +30,9 @@ class Button():
         self._text_rect = self._rendered_text.get_rect(center=self.rect.center)
 
 
-    def draw(self, surface):
-        pygame.draw.rect(surface, self.color, self.rect, border_radius = int(0.1*self.width))
+    def draw(self, surface, border_radius = "auto"):
+        if border_radius == "auto": border_radius = int(0.1*self.width)
+        pygame.draw.rect(surface, self.color, self.rect, border_radius = border_radius)
         surface.blit(self._rendered_text, self._text_rect)
 
 

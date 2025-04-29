@@ -75,7 +75,8 @@ class EventHandler():
             self.board.grid[y_selected][x_selected].move((x_board, y_board))
             self._reset_attributes()
             if isinstance(self.board.grid[y_selected][x_selected], Pawn) and y_board in [0, 7]:
-                self.board.grid[y_selected][x_selected]._captured = True
+                self.board.update_grid()
+                self.board.grid[y_board][x_board]._captured = True
                 self.pawn_position = board_pos
                 return Action.PROMOTE
             return Action.MOVED

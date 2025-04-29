@@ -85,14 +85,6 @@ class GameLoop():
 
             # draw square background
             color = ["darkolivegreen2","darkolivegreen4"][(x+y)%2]
-            pygame.draw.rect(
-                self.window.screen,
-                color,
-                pygame.Rect(pos, (self.square_width, self.square_width))
-            )
-
-            # blit the piece image
-            self.window.screen.blit(img_list[idx], pos)
 
             # create button callback
             btn = Button(
@@ -106,6 +98,13 @@ class GameLoop():
                 callback=self.on_promotion(piece_code, pawn_position, side)
             )
             self.promotion_buttons.append(btn)
+            btn.draw(self.window.screen, border_radius=0)
+            
+            # draw border
+            pygame.draw.rect(self.window.screen, "black", panel, width=3)
+            
+            # blit the piece image
+            self.window.screen.blit(img_list[idx], pos)
 
         self.window.update()
 
@@ -136,7 +135,7 @@ class GameLoop():
 
     
     def draw_background(self):
-        alpha = 150  # 75% transparent
+        alpha = 150
         background_surf  = pygame.Surface((self.window.width, self.window.height), pygame.SRCALPHA)
         background_color = (0, 0, 0, alpha)
         rect = pygame.Rect(0, 0, self.window.width, self.window.height)
