@@ -170,13 +170,13 @@ class Game():
             if action == Action.MOVED or action == Action.PROMOTE:
                 self.swap_turns(turn_board)
                 self.move.cache_board_state(self.board)
-
                 self.check_for_end()
 
                 if play_bot:
-                    pass #self.bot.move, message = self.check_for_end() return message
-            
-            if self.message: return self.message
+                    # self.bot.move()
+                    self.swap_turns(turn_board)
+                    self.move.cache_board_state(self.board)
+                    self.check_for_end()
 
             self.gui.tick(60)
 
@@ -189,13 +189,14 @@ class Game():
         self.start_screen.running = True
         self.end_screen.running = True
 
+
     def play(self):
         while True:            
             self.start_screen.start_screen_loop()
-            message = self.game_loop_gui(play_bot=self.start_screen.play_bot, 
+            self.game_loop_gui(play_bot=self.start_screen.play_bot, 
                                          turn_board=self.start_screen.flip_board, 
                                          show_legal_moves=self.start_screen.show_moves,
                                          side=self.start_screen.chosen_color,
                                          with_takeback=self.start_screen.with_takeback)
-            self.end_screen.end_screen_loop(message, self.board)
+            self.end_screen.end_screen_loop(self.message, self.board)
             self.reset_all_properties()
