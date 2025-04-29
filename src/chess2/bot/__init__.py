@@ -1,0 +1,1 @@
+from chess2.bot.move_generation import MoveGenerator
