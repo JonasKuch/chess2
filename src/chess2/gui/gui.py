@@ -16,11 +16,11 @@ import pygame
 class GameLoop():
     def __init__(self, width, height, board, on_undo, on_redo, on_give_up):
         self.window = Window(width, height)
-        self.square_width = 0.8*self.window.width / 8   ###################
+        self.square_width = 0.8*self.window.width / 8
         self.board_renderer = BoardRenderer(self.window)
         self.pieces_renderer = PiecesRenderer(self.window, board)
-        self.button_size = int(0.8*self.square_width)        ###################
-        self.button_color = "burlywood3"                ###################
+        self.button_size = int(0.8*self.square_width)
+        self.button_color = "burlywood3"
         self.offset_x = (self.window.width - self.square_width*8)/2
         self.offset_y = (self.window.height - self.square_width*8)/2
         self.buttons_game = [
