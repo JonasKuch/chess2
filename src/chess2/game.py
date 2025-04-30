@@ -132,6 +132,7 @@ class Game():
     def on_give_up(self):
         winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
         self.message = f"{self.board.turn.name} GAVE UP! {winning_color.name} WON!"
+        self.swap_turns(None)
         self.running = False
 
     

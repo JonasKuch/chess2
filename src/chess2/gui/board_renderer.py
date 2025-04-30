@@ -14,9 +14,7 @@ class BoardRenderer():
 
     def draw_additional_square(self, side, piece, color, width):
         x, y = piece._position
-        x_transformed, y_transformed = ( x*self.square_width+self.offset_x, (7-y)*self.square_width+self.offset_y) if side == Color.WHITE else ( (7-x)*self.square_width+self.offset_x, y*self.square_width+self.offset_y) 
-
-        # Draw the transparent circle onto the temporary surface
+        x_transformed, y_transformed = ( x*self.square_width+self.offset_x, (7-y)*self.square_width+self.offset_y) if side == Color.WHITE else ( (7-x)*self.square_width+self.offset_x, y*self.square_width+self.offset_y)
         rect = pygame.Rect(x_transformed, y_transformed, self.square_width, self.square_width)
         pygame.draw.rect(self.surface, color, rect, width)
 

@@ -1,4 +1,4 @@
-from chess2.gui import Button, EventHandler, BoardRenderer, PiecesRenderer
+from chess2.gui import Button, EventHandler, BoardRenderer, PiecesRenderer, StartScreen
 from chess2.board import Board
 from chess2 import Color
 import pygame
@@ -6,7 +6,7 @@ import pygame
 
 
 class EndScreen():
-    def __init__(self, window, start_screen):
+    def __init__(self, window, start_screen:StartScreen):
         self.start_screen = start_screen
         self.window = window
         self.surface = window.screen
@@ -63,8 +63,7 @@ class EndScreen():
         self.board_renderer.board = board
         clock = pygame.time.Clock()
         if self.start_screen.flip_board:
-            # side = Color.BLACK if board.turn == Color.WHITE else Color.WHITE
-            side = board.turn
+            side = Color.BLACK if board.turn == Color.WHITE else Color.WHITE
         else:
             side = self.start_screen.chosen_color
         while self.running:
