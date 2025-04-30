@@ -4,7 +4,7 @@ from chess2.board import Board
 
 
 class BoardRenderer():
-    def __init__(self, window, board, event_handler, colors:list=["darkolivegreen2", "darkolivegreen4"]): # überall wo boardrenderer importiert wurde müssen die neuen arguments noch gepasst werden
+    def __init__(self, window, board:Board, event_handler:EventHandler, colors:list=["darkolivegreen2", "darkolivegreen4"]): # überall wo boardrenderer importiert wurde müssen die neuen arguments noch gepasst werden
         self.surface = window.screen
         self.board = board
         self.event_handler = event_handler
@@ -14,6 +14,8 @@ class BoardRenderer():
         self.offset_y = (window.height - self.square_width*8)/2
 
     def draw(self):
+        if self.board.white_king.in_check:
+            pass
         for x in range(8):
             for y in range(8):
                 rect = pygame.Rect(x*self.square_width + self.offset_x, y*self.square_width + self.offset_y, self.square_width, self.square_width)
