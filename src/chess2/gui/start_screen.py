@@ -74,6 +74,8 @@ class StartScreen():
 
     def on_play_bot(self):
         self.play_bot = not self.play_bot
+        if self.play_bot:
+            self.flip_board = False
 
 
     def on_chose_side(self):
@@ -81,7 +83,8 @@ class StartScreen():
 
 
     def on_flip_board(self):
-        self.flip_board = not self.flip_board
+        if not self.play_bot:
+            self.flip_board = not self.flip_board
 
     
     def on_show_moves(self):

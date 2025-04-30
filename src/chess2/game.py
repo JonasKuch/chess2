@@ -149,23 +149,25 @@ class Game():
             winning_color = Color.BLACK if self.board.turn == Color.WHITE else Color.WHITE
             self.message = f"CHECK MATE! {winning_color.name} WON!"
             self.running = False
-            return
+            return True
 
         if any(count == 3 for count in self.move.repetition_counter.values()):
             self.message = "DRAW DUE TO MOVE REPETITION"
             self.running = False
-            return
+            return True
 
 
         if self.board.halfmove_clock >= 100:
             self.message = "50 MOVE RULE DRAW"
             self.running = False
-            return
+            return True
 
         if self.board.get_possible_moves_of_all_pieces(self.board.turn) == []:
             self.message = "STALEMATE"
             self.running = False
-            return
+            return True
+        
+        return False
     
 
     def game_loop_gui(self, play_bot , turn_board, show_legal_moves, side = Color.WHITE, with_takeback = True):
@@ -180,10 +182,10 @@ class Game():
                 if action == Action.MOVED or action == Action.PROMOTE:
                     self.swap_turns(turn_board)
                     self.move.cache_board_state(self.board)
-                    self.check_for_end()
+                    end = self.check_for_end()
 
             bot_side = Color.BLACK if side == Color.WHITE else Color.WHITE
-            if play_bot and self.board.turn == bot_side:
+            if play_bot and self.board.turn == bot_side and not end:
                 self.board.load_state(self.bot.make_random_move(bot_side, self.board))
                 self.swap_turns(turn_board)
                 self.move.cache_board_state(self.board)
