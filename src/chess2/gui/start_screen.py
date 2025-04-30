@@ -9,11 +9,14 @@ class StartScreen():
     def __init__(self, window:Window):
         self.window = window
         self.surface = window.screen
-        self.board_renderer = BoardRenderer(self.window)
+
         self.board = Board()
         self.board.initialize()
-        self.pieces_renderer = PiecesRenderer(self.window, self.board)
+
         self.event_handler = EventHandler(self.window, self.board)
+        self.board_renderer = BoardRenderer(self.window, self.board, self.event_handler)
+        self.pieces_renderer = PiecesRenderer(self.window, self.board)
+        
         self.running = True
 
         self.start_window_width = self.window.width*0.7
@@ -112,7 +115,7 @@ class StartScreen():
                 button.handle_event(event)
 
             self.window.draw()
-            self.board_renderer.draw()
+            self.board_renderer.draw(Color.WHITE)
             self.pieces_renderer.draw(Color.WHITE)
             self.draw_background()
             self.draw_start_window()

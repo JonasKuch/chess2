@@ -10,8 +10,8 @@ class EndScreen():
         self.start_screen = start_screen
         self.window = window
         self.surface = window.screen
-        self.board_renderer = BoardRenderer(self.window)
         self.event_handler = EventHandler(self.window, None)
+        self.board_renderer = BoardRenderer(self.window, None, self.event_handler)
         self.end_window_width = self.window.width*0.7
         self.end_window_height = self.window.height*0.5
         self.end_window_color = "darkolivegreen3"
@@ -60,9 +60,11 @@ class EndScreen():
     
     def end_screen_loop(self, message, board):
         pieces_renderer = PiecesRenderer(self.window, board)
+        self.board_renderer.board = board
         clock = pygame.time.Clock()
         if self.start_screen.flip_board:
-            side = Color.BLACK if board.turn == Color.WHITE else Color.WHITE
+            # side = Color.BLACK if board.turn == Color.WHITE else Color.WHITE
+            side = board.turn
         else:
             side = self.start_screen.chosen_color
         while self.running:
@@ -71,7 +73,7 @@ class EndScreen():
             for button in self.buttons:
                 button.handle_event(event)
             self.window.draw()
-            self.board_renderer.draw()
+            self.board_renderer.draw(side)
             pieces_renderer.draw(side)
             self.draw_background()
             self.draw_end_window(message)

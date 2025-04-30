@@ -43,7 +43,7 @@ class GameLoop():
 
     def draw_all_game(self, side):
         self.window.draw()
-        self.board_renderer.draw()
+        self.board_renderer.draw(side)
         self.pieces_renderer.draw(side)
         self.draw_buttons_game()
 
@@ -156,6 +156,7 @@ class GameLoop():
 
         selected_piece = self.event_handler.selected_piece
         if selected_piece and show_legal_moves:
+            self.draw_all_game(side) # to stop delay between drawings
             self.pieces_renderer.draw_legal_moves(selected_piece, side)
 
         if self.action == Action.PROMOTE:
