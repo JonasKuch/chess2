@@ -7,10 +7,9 @@ import numpy as np
 class MoveGenerator():
     def get_all_possible_next_boards(self, side, board): # side = self.board.turn
         next_boards = []
-        enemie = Color.BLACK if side == Color.WHITE else Color.WHITE
 
         for i, piece in enumerate(board.pieces_on_board):
-            if piece._color != side:
+            if piece._color != side or piece._captured:
                 continue
             
             legal_moves = piece.get_legal_moves()

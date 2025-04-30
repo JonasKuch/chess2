@@ -1,4 +1,4 @@
-from chess2.pieces import Piece
+from chess2.pieces import Piece, Rook
 from chess2 import Color, PieceType
 
 
@@ -31,12 +31,18 @@ class King(Piece):
             if self.board.is_empty(new_pos) or not self.board.grid[y_pos+y_dir][x_pos+x_dir]._color == self._color: possible_moves.append(new_pos)
         
         # Casteling
-        if self.can_castle_queenside and not self.castelling_square_under_attack_queenside and self.board.is_empty((1, ground_line)) and self.board.is_empty((2, ground_line)) and self.board.is_empty((3, ground_line)):
-            new_pos = (x_pos-2, y_pos)
-            possible_moves.append(new_pos)
-        if self.can_castle_kingside and not self.castelling_square_under_attack_kingside and self.board.is_empty((5, ground_line)) and self.board.is_empty((6, ground_line)):
-            new_pos = (x_pos+2, y_pos)
-            possible_moves.append(new_pos)
+        if self.can_castle_queenside and not self.castelling_square_under_attack_queenside:
+            if self.board.is_empty((1, ground_line)) and self.board.is_empty((2, ground_line)) and self.board.is_empty((3, ground_line)):
+                rook_square = self.board.grid[ground_line][0]
+                if isinstance(rook_square, Rook) and rook_square._color == self._color and not rook_square._has_moved:
+                    new_pos = (x_pos-2, y_pos)
+                    possible_moves.append(new_pos)
+        if self.can_castle_kingside and not self.castelling_square_under_attack_kingside:
+            if self.board.is_empty((5, ground_line)) and self.board.is_empty((6, ground_line)):
+                rook_square = self.board.grid[ground_line][7]
+                if isinstance(rook_square, Rook) and rook_square._color == self._color and not rook_square._has_moved:
+                    new_pos = (x_pos+2, y_pos)
+                    possible_moves.append(new_pos)
         
         return possible_moves
     
