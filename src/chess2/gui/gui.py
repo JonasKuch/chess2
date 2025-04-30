@@ -17,7 +17,9 @@ class GameLoop():
     def __init__(self, width, height, board, on_undo, on_redo, on_give_up):
         self.window = Window(width, height)
         self.square_width = 0.8*self.window.width / 8
-        self.board_renderer = BoardRenderer(self.window)
+        self.board = board
+        self.event_handler = EventHandler(self.window, board)
+        self.board_renderer = BoardRenderer(self.window, self.board, self.event_handler)
         self.pieces_renderer = PiecesRenderer(self.window, board)
         self.button_size = int(0.8*self.square_width)
         self.button_color = "burlywood3"
@@ -29,9 +31,7 @@ class GameLoop():
             Button((self.square_width * 6 + self.offset_x, self.square_width * 8.25 + self.offset_y), 2*self.button_size, self.button_size, "brown3", "GIVE UP", "black", int(self.button_size*0.5), on_give_up)
         ]
         self.promotion_buttons = []
-        self.event_handler = EventHandler(self.window, board)
         self.clock = pygame.time.Clock()
-        self.board = board
         self.action = None
         self.promotion_loop = False
 

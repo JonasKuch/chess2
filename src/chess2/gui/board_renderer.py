@@ -1,9 +1,13 @@
 import pygame
+from chess2.gui import EventHandler
+from chess2.board import Board
 
 
 class BoardRenderer():
-    def __init__(self, window, colors:list=["darkolivegreen2", "darkolivegreen4"]):
+    def __init__(self, window, board, event_handler, colors:list=["darkolivegreen2", "darkolivegreen4"]): # überall wo boardrenderer importiert wurde müssen die neuen arguments noch gepasst werden
         self.surface = window.screen
+        self.board = board
+        self.event_handler = event_handler
         self.colors = colors
         self.square_width = 0.8*window.width / 8
         self.offset_x = (window.width - self.square_width*8)/2
