@@ -8,6 +8,7 @@ from chess2 import Color, Action
 from chess2.gui import GameLoop
 from chess2.gui import StartScreen, EndScreen
 from chess2.move import Move
+from chess2.bot import MoveGenerator
 import pygame
 import time
 
@@ -20,6 +21,7 @@ class Game():
         self.move = Move()
         self.start_screen = StartScreen(self.gui.window)
         self.end_screen = EndScreen(self.gui.window, self.start_screen)
+        self.bot = MoveGenerator(self.board)
         self.in_gui = in_gui
         self.action = None
         self.with_takeback = with_takeback
@@ -114,7 +116,10 @@ class Game():
             return None
         if self.move.move_num < 1:
             return None
-        self.move.move_num -= 1
+        if self.start_screen.play_bot:
+            self.move.move_num -= 2
+        if not self.start_screen.play_bot:
+            self.move.move_num -= 1
         other_board = self.move.load_board_state(self.move.move_num)
         self.board.load_state(other_board)
         self.move.move_cache[self.move.move_num] = self.board.clone()    # Wichtig, da sindt der nächste zug direkt auf das gerade initialisierte board angewendet werden würde bevor es gecached wird
@@ -123,7 +128,10 @@ class Game():
     def on_redo(self):
         if self.move.move_num >= self.move.max_move:
             return None
-        self.move.move_num += 1
+        if self.start_screen.play_bot:
+            self.move.move_num += 2
+        if not self.start_screen.play_bot:
+            self.move.move_num += 1
         other_board = self.move.move_cache[self.move.move_num]
         self.board.load_state(other_board)
         self.move.move_cache[self.move.move_num] = self.board.clone()    # Wichtig, da sindt der nächste zug direkt auf das gerade initialisierte board angewendet werden würde bevor es gecached wird
@@ -166,18 +174,20 @@ class Game():
         self.move.cache_board_state(self.board)
 
         while self.running:
-            action = self.gui.gameloop(turn = self.board.turn, side = self.board.turn if turn_board else side, show_legal_moves = show_legal_moves)
+            if not play_bot or self.board.turn == side:
+                action = self.gui.gameloop(turn = self.board.turn, side = self.board.turn if turn_board else side, show_legal_moves = show_legal_moves)
 
-            if action == Action.MOVED or action == Action.PROMOTE:
-                self.swap_turns(turn_board)
-                self.move.cache_board_state(self.board)
-                self.check_for_end()
-
-                if play_bot:
-                    # self.bot.move()
+                if action == Action.MOVED or action == Action.PROMOTE:
                     self.swap_turns(turn_board)
                     self.move.cache_board_state(self.board)
                     self.check_for_end()
+
+            bot_side = Color.BLACK if side == Color.WHITE else Color.WHITE
+            if play_bot and self.board.turn == bot_side:
+                self.board.load_state(self.bot.make_random_move(bot_side))
+                self.swap_turns(turn_board)
+                self.move.cache_board_state(self.board)
+                self.check_for_end()
 
             self.gui.tick(60)
 

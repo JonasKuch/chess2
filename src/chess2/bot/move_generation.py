@@ -16,14 +16,14 @@ class MoveGenerator():
         for i, piece in enumerate(self.board.pieces_on_board):
             if piece._color != side:
                 continue
-
+            
             legal_moves = piece.get_legal_moves()
             for move in legal_moves:
                 cloned_board = self.board.clone()
+                cloned_board.update_grid()
                 cloned_board.pieces_on_board[i].move(move)
                 cloned_board.update_grid()
                 cloned_board.update_checks()
-                mate = self.board.check_if_mate(enemie)
                 next_boards.append(cloned_board)
 
         return next_boards
