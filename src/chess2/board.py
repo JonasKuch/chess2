@@ -75,6 +75,8 @@ class Board():
     def clone(self):
         new_board = self.__class__()
         new_board.turn = copy.deepcopy(self.turn)
+        new_board.halfmove_clock = copy.deepcopy(self.halfmove_clock)
+        new_board.fullmove_clock = copy.deepcopy(self.fullmove_clock)
         for old_piece in self.pieces_on_board:
             new_piece = old_piece.clone(new_board)
             new_board.pieces_on_board.append(new_piece)

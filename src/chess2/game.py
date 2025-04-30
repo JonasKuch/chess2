@@ -21,7 +21,7 @@ class Game():
         self.move = Move()
         self.start_screen = StartScreen(self.gui.window)
         self.end_screen = EndScreen(self.gui.window, self.start_screen)
-        self.bot = MoveGenerator(self.board)
+        self.bot = MoveGenerator()
         self.in_gui = in_gui
         self.action = None
         self.with_takeback = with_takeback
@@ -184,7 +184,7 @@ class Game():
 
             bot_side = Color.BLACK if side == Color.WHITE else Color.WHITE
             if play_bot and self.board.turn == bot_side:
-                self.board.load_state(self.bot.make_random_move(bot_side))
+                self.board.load_state(self.bot.make_random_move(bot_side, self.board))
                 self.swap_turns(turn_board)
                 self.move.cache_board_state(self.board)
                 self.check_for_end()

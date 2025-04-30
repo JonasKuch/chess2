@@ -1,10 +1,9 @@
-from abc import ABC, abstractmethod
 from chess2 import Color, PieceType
 import copy
 
 
 
-class Piece(ABC):
+class Piece():
     def __init__(self, color, position, board):
         self._color = color
         self._position = position
@@ -13,7 +12,6 @@ class Piece(ABC):
         self.board = board
     
 
-    @abstractmethod
     def get_pseudo_legal_moves(self):
         pass
     

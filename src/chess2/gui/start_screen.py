@@ -28,7 +28,7 @@ class StartScreen():
         self.button_width = self.window.width/1.5
         self.button_height = 0.8*self.window.width/8
         self.button_color = "burlywood3"
-        self.play_bot = False
+        self.play_bot = True
         self.chosen_color = Color.WHITE
         self.show_moves = True
         self.flip_board = True
@@ -74,27 +74,22 @@ class StartScreen():
 
     def on_play_bot(self):
         self.play_bot = not self.play_bot
-        return None
 
 
     def on_chose_side(self):
         self.chosen_color = Color.BLACK if self.chosen_color == Color.WHITE else Color.WHITE
-        return None
 
 
     def on_flip_board(self):
         self.flip_board = not self.flip_board
-        return None
 
     
     def on_show_moves(self):
         self.show_moves = not self.show_moves
-        return None
 
 
     def on_takebacks(self):
         self.with_takeback = not self.with_takeback
-        return "yes"
 
     
     def on_start(self):

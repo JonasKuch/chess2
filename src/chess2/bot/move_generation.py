@@ -5,21 +5,17 @@ import numpy as np
 
 
 class MoveGenerator():
-    def __init__(self, board:Board):
-        self.board = board
-        
-
-    def get_all_possible_next_boards(self, side): # side = self.board.turn
+    def get_all_possible_next_boards(self, side, board): # side = self.board.turn
         next_boards = []
         enemie = Color.BLACK if side == Color.WHITE else Color.WHITE
 
-        for i, piece in enumerate(self.board.pieces_on_board):
+        for i, piece in enumerate(board.pieces_on_board):
             if piece._color != side:
                 continue
             
             legal_moves = piece.get_legal_moves()
             for move in legal_moves:
-                cloned_board = self.board.clone()
+                cloned_board = board.clone()
                 cloned_board.update_grid()
                 cloned_board.pieces_on_board[i].move(move)
                 cloned_board.update_grid()
@@ -29,8 +25,10 @@ class MoveGenerator():
         return next_boards
     
 
-    def make_random_move(self, side):
-        possible_moves = self.get_all_possible_next_boards(side)
+    def make_random_move(self, side, board):
+        possible_moves = self.get_all_possible_next_boards(side, board)
+        # for b in possible_moves:
+        #     b.print(Color.BLACK)
         next_board = np.random.choice(possible_moves)
         return next_board
 
@@ -38,8 +36,8 @@ class MoveGenerator():
 if __name__ == "__main__":
     board = Board()
     board.initialize()
-    mg = MoveGenerator(board)
-    next_boards = mg.get_all_possible_next_boards(board.turn)
+    mg = MoveGenerator()
+    next_boards = mg.get_all_possible_next_boards(board.turn, board)
     for b in next_boards:
         b.print(board.turn)
-    mg.make_random_move(board.turn).print(board.turn)
+    mg.make_random_move(board.turn, board).print(board.turn)
