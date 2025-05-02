@@ -4,7 +4,7 @@ from chess2 import Color
 import numpy as np
 import copy
 from stockfish import Stockfish
-stockfish = Stockfish(path="/opt/homebrew/bin/stockfish", depth=5)
+stockfish = Stockfish(path="/opt/homebrew/bin/stockfish", depth=20)
 
 
 
