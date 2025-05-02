@@ -6,3 +6,6 @@ class ChessDataset(Dataset):
         self.transform = transform
         self.target_transform = target_transform
 
+
+    def __getitem__(self, index):
+        pass

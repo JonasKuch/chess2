@@ -3,6 +3,8 @@ from chess2.pieces import Pawn, Queen, Bishop, Rook, Knight
 from chess2 import Color
 import numpy as np
 import copy
+from stockfish import Stockfish
+stockfish = Stockfish(path="/opt/homebrew/bin/stockfish", depth=10)
 
 
 
@@ -51,6 +53,32 @@ class MoveGenerator():
 
         return next_boards
     
+    
+    def stockfish_move(self, side, in_board):
+        board = in_board.clone()
+        coord_dict = {
+            'a':0,
+            'b':1,
+            'c':2,
+            'd':3,
+            'e':4,
+            'f':5,
+            'g':6,
+            'h':7
+                      }
+
+        fen = board.to_fen()
+        stockfish.set_fen_position(fen)
+        raw_move = stockfish.get_best_move()
+        start_raw = raw_move[:2]
+        end_raw = raw_move[2:4]
+        start_x, start_y = coord_dict[start_raw[0]], int(start_raw[1])-1
+        move = coord_dict[end_raw[0]], int(end_raw[1])-1
+        board.grid[start_y][start_x].move(move)
+        board.update_grid()
+        board.update_checks()
+        return board
+
 
     def make_random_move(self, side, board):
         possible_moves = self.get_all_possible_next_boards(side, board)
