@@ -152,7 +152,7 @@ class Game():
             return True
 
         if any(count == 3 for count in self.move.repetition_counter.values()):
-            self.message = "DRAW DUE TO MOVE REPETITION"
+            self.message = "MOVE REPETITION! DRAW!"
             self.running = False
             return True
 
@@ -182,10 +182,10 @@ class Game():
                 if action == Action.MOVED or action == Action.PROMOTE:
                     self.swap_turns(turn_board)
                     self.move.cache_board_state(self.board)
-                    end = self.check_for_end()
+                    self.check_for_end()
 
             bot_side = Color.BLACK if side == Color.WHITE else Color.WHITE
-            if play_bot and self.board.turn == bot_side and not end:
+            if play_bot and self.board.turn == bot_side and self.running:
                 self.board.load_state(self.bot.stockfish_move(bot_side, self.board))
                 self.swap_turns(turn_board)
                 self.move.cache_board_state(self.board)

@@ -31,7 +31,7 @@ class StartScreen():
         self.play_bot = True
         self.chosen_color = Color.WHITE
         self.show_moves = True
-        self.flip_board = True
+        self.flip_board = False
         self.with_takeback = True
         self.buttons = [
             Button(position=(0, 0), width=self.button_width, height=self.button_height, color=self.button_color, text=f"", text_color="black", text_size=int(self.button_height/2), callback=self.on_play_bot),

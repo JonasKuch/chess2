@@ -17,13 +17,16 @@ class EndScreen():
         self.end_window_color = "darkolivegreen3"
         self.end_window_left = (self.window.width-self.end_window_width)/2
         self.end_window_top = (self.window.height-self.end_window_height)/2
+        self.print_window = True
+        self.show_button_text = "HIDE"
         self.running = True
 
         self.button_width = self.window.width/1.5
         self.button_height = 0.8*self.window.width/8
         self.button_color = "burlywood3"
         self.buttons = [
-            Button(position=(self.end_window_left + (self.end_window_width - self.button_width)/2, self.end_window_top + self.end_window_height - 100), width=self.button_width, height=self.button_height, color = self.button_color, text="RESTART", text_color="black", text_size=int(self.button_height/2), callback=self.on_restart)
+            Button(position=(self.end_window_left + (self.end_window_width - self.button_width)/2, self.end_window_top + self.end_window_height - 100), width=self.button_width, height=self.button_height, color = self.button_color, text="RESTART", text_color="black", text_size=int(self.button_height/2), callback=self.on_restart),
+            Button(position=(self.end_window_left + (self.end_window_width - self.button_width)/2, self.end_window_top + self.end_window_height + 100), width=self.button_width, height=self.button_height, color = self.button_color, text=self.show_button_text, text_color="black", text_size=int(self.button_height/2), callback=self.on_show),
             ] 
 
 
@@ -38,8 +41,9 @@ class EndScreen():
 
 
     def draw_buttons(self):
-        for button in self.buttons:
-            button.draw(self.surface)
+        if self.print_window:
+            self.buttons[0].draw(self.surface)
+        self.buttons[1].draw(self.surface)
 
 
     def draw_end_window(self, message):
@@ -58,6 +62,14 @@ class EndScreen():
         self.running = False
 
     
+    def on_show(self):
+        self.print_window = not self.print_window
+        if self.print_window:
+            self.buttons[1].set_text("HIDE")
+        else: 
+            self.buttons[1].set_text("SHOW")
+
+    
     def end_screen_loop(self, message, board):
         pieces_renderer = PiecesRenderer(self.window, board)
         self.board_renderer.board = board
@@ -74,8 +86,9 @@ class EndScreen():
             self.window.draw()
             self.board_renderer.draw(side)
             pieces_renderer.draw(side)
-            self.draw_background()
-            self.draw_end_window(message)
+            if self.print_window:
+                self.draw_background()
+                self.draw_end_window(message)
             self.draw_buttons()
 
             self.window.update()

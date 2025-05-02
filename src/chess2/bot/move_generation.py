@@ -4,7 +4,7 @@ from chess2 import Color
 import numpy as np
 import copy
 from stockfish import Stockfish
-stockfish = Stockfish(path="/opt/homebrew/bin/stockfish", depth=10)
+stockfish = Stockfish(path="/opt/homebrew/bin/stockfish", depth=5)
 
 
 
@@ -74,7 +74,23 @@ class MoveGenerator():
         end_raw = raw_move[2:4]
         start_x, start_y = coord_dict[start_raw[0]], int(start_raw[1])-1
         move = coord_dict[end_raw[0]], int(end_raw[1])-1
-        board.grid[start_y][start_x].move(move)
+        piece = board.grid[start_y][start_x]
+
+        if isinstance(piece, Pawn) and move[1] in [0, 7]:
+            possible_promotions = self.pawn_promotion(piece, board, move)
+            evals = []
+            for pos in possible_promotions:
+                fen = stockfish.set_fen_position(fen)
+                cp = stockfish.get_evaluation()
+                evals.append(cp["value"])
+            max_ind = np.argmax(evals)
+            min_ind = np.argmin(evals)
+            if side == Color.WHITE:
+                return possible_promotions[max_ind]
+            if side == Color.BLACK:
+                return possible_promotions[min_ind]
+        
+        piece.move(move)
         board.update_grid()
         board.update_checks()
         return board
