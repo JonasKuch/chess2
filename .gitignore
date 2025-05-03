@@ -16,3 +16,6 @@ __pycache__/
 
 # Package cache
 *.egg-info
+
+# Training Data
+data/
