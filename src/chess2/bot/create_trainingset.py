@@ -218,17 +218,34 @@ def reformat(line):
     return in_tensor, move_target, val_target, depth
 
 
+def append_block(file, in_tensor_block, move_target_block, val_target_block, depth_block):
+
+    for name, block in [
+        ("input", in_tensor_block),
+        ("move_target", move_target_block),
+        ("val_target", val_target_block),
+        ("depth", depth_block)
+    ]:
+        dataset = file[name]
+        old_len = dataset.len()
+        block_len = block.shape[0]
+        new_len = old_len + block_len
+        dataset.resize((new_len, ) + dataset.shape[1:])
+        dataset[old_len:new_len, ...] = block
+
+
+
 def stream(in_path, out_path, workers):
+
     pool = Pool(workers)
 
     with open(in_path, "r") as in_file, \
          h5py.File(out_path, "w") as out_file:
         
-        in_tensor_dataset = out_file.create_dataset("input", (18, 8, 8), dtype=np.float32) # wieso nicht überall float64?
-        move_target_dataset = out_file.create_dataset("move_target", (4672), dtype=np.int8)
-        val_target_dataset = out_file.create_dataset("val_target", (), dtype = np.float32)
-        depth_dataset = out_file.create_dataset("depth", (), dtype=np.int8)
-        # nochmal alles genauer anschauen !!!
+        out_file.create_dataset("input", (0, 18, 8, 8), dtype=np.float32, maxshape=(None, 18, 8, 8), chunks=(1, 18, 8, 8), compression="gzip")
+        out_file.create_dataset("move_target", (0, 4672), dtype=np.int8, maxshape = (None, 4672), chunks = (1, 4672), compression="gzip")
+        out_file.create_dataset("val_target", (0, 1), dtype = np.float32, maxshape=(None, 1), chunks=(1, 1), compression="gzip")
+        out_file.create_dataset("depth", (0, 1), dtype=np.int8, maxshape=(None, 1), chunks=(1, 1), compression="gzip")
         
         tasks = []
 
@@ -236,23 +253,34 @@ def stream(in_path, out_path, workers):
             tasks.append(line)
 
             if len(tasks) >= 10*workers:
-                for in_tensor, move_target, val_target, depth in pool.map(reformat, tasks):
-                    pass 
+                out_list = list(pool.imap_unordered(reformat, tasks, chunksize=workers))
+                in_tensor_list, move_target_list, val_target_list, depth_list = zip(*out_list)
+                append_block(
+                    out_file, 
+                    np.stack(in_tensor_list), 
+                    np.stack(move_target_list), 
+                    np.stack(val_target_list)[:, None], 
+                    np.stack(depth_list)[:, None]
+                )
+                tasks.clear()
+            
+        if tasks:
+            out_list = list(pool.map(reformat, tasks))
+            in_tensor_list, move_target_list, val_target_list, depth_list = zip(*out_list)
+            append_block(
+                out_file, 
+                np.stack(in_tensor_list), 
+                np.stack(move_target_list), 
+                np.stack(val_target_list)[:, None], 
+                np.stack(depth_list)[:, None]
+            )
+            tasks.clear()
 
 
     pool.close()
     pool.join()
 
 
-def lines_generator(in_file):
-    with open(in_file, "r") as f:
-        i = 0
-        for line in f:
-            print(line)
-            i += 1
-            if i > 10:
-                break
-
-
 if __name__ == "__main__":
-    lines_generator("src/chess2/bot/data/lichess_filtered.jsonl")
+    in_path = "src/chess2/bot/data/lichess_filtered.jsonl"
+    out_path = "src/chess2/bot/data/training_data.h5"
