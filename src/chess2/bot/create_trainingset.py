@@ -64,10 +64,6 @@ def fen_to_tensor(fen):
     return tensor
 
 
-def target_validation(cp):
-    return np.tanh(cp, dtype=np.float32)
-
-
 def best_move_one_hot(best_move):
     vector = np.zeros(4672)
     """
@@ -208,12 +204,13 @@ def reformat(line):
 
     fen = data.get("fen")
     best_move = data.get("best_move")
-    cp = data.get("cp")
+    val = data.get("val")
     depth = data.get("depth")
 
     in_tensor = fen_to_tensor(fen)
     move_target = best_move_one_hot(best_move)
-    val_target = target_validation(cp)
+    val_target = np.float32(val)
+    depth = np.float32(depth)
 
     return in_tensor, move_target, val_target, depth
 
@@ -284,3 +281,6 @@ def stream(in_path, out_path, workers):
 if __name__ == "__main__":
     in_path = "src/chess2/bot/data/lichess_filtered.jsonl"
     out_path = "src/chess2/bot/data/training_data.h5"
+    workers = cpu_count()
+
+    stream(in_path, out_path, workers)
