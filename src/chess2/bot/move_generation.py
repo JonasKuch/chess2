@@ -56,44 +56,44 @@ class MoveGenerator():
     
     def stockfish_move(self, side, in_board):
         board = in_board.clone()
-        coord_dict = {
-            'a':0,
-            'b':1,
-            'c':2,
-            'd':3,
-            'e':4,
-            'f':5,
-            'g':6,
-            'h':7
-                      }
+        # map files → 0–7
+        file_to_i = {f:i for i,f in enumerate('abcdefgh')}
 
+        # tell Stockfish the position
         fen = board.to_fen()
         stockfish.set_fen_position(fen)
-        raw_move = stockfish.get_best_move()
-        start_raw = raw_move[:2]
-        end_raw = raw_move[2:4]
-        start_x, start_y = coord_dict[start_raw[0]], int(start_raw[1])-1
-        move = coord_dict[end_raw[0]], int(end_raw[1])-1
-        piece = board.grid[start_y][start_x]
 
-        if isinstance(piece, Pawn) and move[1] in [0, 7]:
-            possible_promotions = self.pawn_promotion(piece, board, move)
-            evals = []
-            for pos in possible_promotions:
-                fen = stockfish.set_fen_position(fen)
-                cp = stockfish.get_evaluation()
-                evals.append(cp["value"])
-            max_ind = np.argmax(evals)
-            min_ind = np.argmin(evals)
-            if side == Color.WHITE:
-                return possible_promotions[max_ind]
-            if side == Color.BLACK:
-                return possible_promotions[min_ind]
-        
-        piece.move(move)
+        # get UCI best move, e.g. "e7e8q" or "e2e4"
+        raw = stockfish.get_best_move()
+        if raw is None:
+            raise RuntimeError("Stockfish returned no move")
+
+        # parse it
+        from_sq, to_sq = raw[:2], raw[2:4]
+        prom = raw[4] if len(raw) == 5 else None
+
+        sx, sy = file_to_i[from_sq[0]], int(from_sq[1]) - 1
+        ex, ey = file_to_i[to_sq[0]], int(to_sq[1]) - 1
+
+        piece = board.grid[sy][sx]
+        # call your move, passing promotion if any
+        if prom:
+            # if your Pawn.move API takes a promotion arg:
+            piece._captured = True
+            # Create the promoted piece
+            promotion_map = {
+                'q': Queen, 'r': Rook, 'b': Bishop, 'n': Knight
+            }
+            cls = promotion_map[prom.lower()]
+            new_piece = cls(side, (ex, ey), board)
+            board.pieces_on_board.append(new_piece)
+        else:
+            piece.move((ex, ey))
+
         board.update_grid()
         board.update_checks()
         return board
+
 
 
     def make_random_move(self, side, board):
