@@ -224,7 +224,7 @@ def append_block(file, in_tensor_block, move_target_block, val_target_block, dep
         ("depth", depth_block)
     ]:
         dataset = file[name]
-        old_len = dataset.len()
+        old_len = dataset.shape[0]
         block_len = block.shape[0]
         new_len = old_len + block_len
         dataset.resize((new_len, ) + dataset.shape[1:])
@@ -232,55 +232,63 @@ def append_block(file, in_tensor_block, move_target_block, val_target_block, dep
 
 
 
-def stream(in_path, out_path, workers):
-
-    pool = Pool(workers)
+def stream(in_path, out_path, chunk_size=1000):
 
     with open(in_path, "r") as in_file, \
          h5py.File(out_path, "w") as out_file:
         
-        out_file.create_dataset("input", (0, 18, 8, 8), dtype=np.float32, maxshape=(None, 18, 8, 8), chunks=(1, 18, 8, 8), compression="gzip")
-        out_file.create_dataset("move_target", (0, 4672), dtype=np.int8, maxshape = (None, 4672), chunks = (1, 4672), compression="gzip")
-        out_file.create_dataset("val_target", (0, 1), dtype = np.float32, maxshape=(None, 1), chunks=(1, 1), compression="gzip")
-        out_file.create_dataset("depth", (0, 1), dtype=np.int8, maxshape=(None, 1), chunks=(1, 1), compression="gzip")
-        
-        tasks = []
+        out_file.create_dataset("input", (0, 18, 8, 8), dtype=np.float32, maxshape=(None, 18, 8, 8), chunks=(chunk_size, 18, 8, 8), compression="gzip")
+        out_file.create_dataset("move_target", (0, 4672), dtype=np.int8, maxshape = (None, 4672), chunks = (chunk_size, 4672), compression="gzip")
+        out_file.create_dataset("val_target", (0, ), dtype = np.float32, maxshape=(None, ), chunks=(chunk_size, ), compression="gzip")
+        out_file.create_dataset("depth", (0, ), dtype=np.int8, maxshape=(None, ), chunks=(chunk_size, ), compression="gzip")
 
+        in_tensor_list, move_target_list, val_target_list, depth_list = [], [], [], []
         for line in in_file:
-            tasks.append(line)
+            in_tensor, move_target, val_target, depth = reformat(line)
 
-            if len(tasks) >= 10*workers:
-                out_list = list(pool.imap_unordered(reformat, tasks, chunksize=workers))
-                in_tensor_list, move_target_list, val_target_list, depth_list = zip(*out_list)
+            in_tensor_list.append(in_tensor)
+            move_target_list.append(move_target)
+            val_target_list.append(val_target)
+            depth_list.append(depth)
+
+            if len(in_tensor_list) >= chunk_size:
                 append_block(
-                    out_file, 
-                    np.stack(in_tensor_list), 
-                    np.stack(move_target_list), 
-                    np.stack(val_target_list)[:, None], 
-                    np.stack(depth_list)[:, None]
+                    out_file,
+                    np.asarray(in_tensor_list,    dtype=np.float32),
+                    np.asarray(move_target_list,  dtype=np.int8),
+                    np.asarray(val_target_list,   dtype=np.float32),
+                    np.asarray(depth_list,        dtype=np.int16)
                 )
-                tasks.clear()
+                in_tensor_list.clear()
+                move_target_list.clear()
+                val_target_list.clear()
+                depth_list.clear()
             
-        if tasks:
-            out_list = list(pool.map(reformat, tasks))
-            in_tensor_list, move_target_list, val_target_list, depth_list = zip(*out_list)
+        if in_tensor_list:
             append_block(
-                out_file, 
-                np.stack(in_tensor_list), 
-                np.stack(move_target_list), 
-                np.stack(val_target_list)[:, None], 
-                np.stack(depth_list)[:, None]
+                out_file,
+                np.asarray(in_tensor_list,    dtype=np.float32),
+                np.asarray(move_target_list,  dtype=np.int8),
+                np.asarray(val_target_list,   dtype=np.float32),
+                np.asarray(depth_list,        dtype=np.int16)
             )
-            tasks.clear()
-
-
-    pool.close()
-    pool.join()
+            in_tensor_list.clear()
+            move_target_list.clear()
+            val_target_list.clear()
+            depth_list.clear()
 
 
 if __name__ == "__main__":
     in_path = "src/chess2/bot/data/lichess_filtered.jsonl"
     out_path = "src/chess2/bot/data/training_data.h5"
-    workers = cpu_count()
 
-    stream(in_path, out_path, workers)
+    # stream(in_path, out_path)
+
+    with h5py.File(out_path, "r") as file:
+        count = 0
+        for i in range(file["input"].shape[0]):
+            count += 1
+            if count%10000 == 0:
+                print(file["depth"][i], "\n", "-----------------------------\n")
+            
+        print(count)
