@@ -400,3 +400,4 @@ if __name__ == "__main__":
         move_vec = file["move_target"][0]
         print(processor.decode_policy_vector(move_vec))
         print(file["depth"][0])
+        print(file["move_target"].shape)
