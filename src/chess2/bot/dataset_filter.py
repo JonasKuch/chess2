@@ -116,7 +116,7 @@ if __name__ == "__main__":
     out_path = "src/chess2/bot/data/lichess_filtered.jsonl"
     min_depth = 20
     workers = cpu_count()
-    desired_data = 2_000_000
+    desired_data = 3_000_000
 
     stream(in_path=in_path, out_path=out_path, min_depth=min_depth, workers=workers, desired_data=desired_data)
 

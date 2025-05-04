@@ -6,10 +6,6 @@ from multiprocessing import Pool, cpu_count
 # rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 
 class TrainingSetProcessor:
-    def __init__(self, in_file_path, out_file_path):
-        self.in_path = in_file_path
-        self.out_path = out_file_path
-
 
     def fen_to_tensor(self, fen):
         tensor = np.zeros((18, 8, 8), dtype=np.float32)
@@ -321,10 +317,10 @@ class TrainingSetProcessor:
             dataset[old_len:new_len, ...] = block
 
 
-    def jsonl_to_h5_stream(self, chunk_size=1000):
+    def jsonl_to_h5_stream(self, in_path, out_path, desired_len, chunk_size=1000, start_line=0):
 
-        with open(self.in_path, "r") as in_file, \
-            h5py.File(self.out_path, "w") as out_file:
+        with open(in_path, "r") as in_file, \
+            h5py.File(out_path, "w") as out_file:
             
             out_file.create_dataset("input", (0, 18, 8, 8), dtype=np.float32, maxshape=(None, 18, 8, 8), chunks=(chunk_size, 18, 8, 8), compression="gzip")
             out_file.create_dataset("move_target", (0, 4672), dtype=np.int8, maxshape = (None, 4672), chunks = (chunk_size, 4672), compression="gzip")
@@ -332,7 +328,17 @@ class TrainingSetProcessor:
             out_file.create_dataset("depth", (0, ), dtype=np.int8, maxshape=(None, ), chunks=(chunk_size, ), compression="gzip")
 
             in_tensor_list, move_target_list, val_target_list, depth_list = [], [], [], []
+            line_num = 0
+            set_len = 0
+
             for line in in_file:
+                line_num += 1
+                if line_num < start_line:
+                    continue
+                set_len += 1
+                if set_len > desired_len:
+                    break
+
                 in_tensor, move_target, val_target, depth = self.reformat(line)
 
                 in_tensor_list.append(in_tensor)
@@ -369,23 +375,28 @@ class TrainingSetProcessor:
 
 if __name__ == "__main__":
     in_path = "src/chess2/bot/data/lichess_filtered.jsonl"
-    out_path = "src/chess2/bot/data/training_data.h5"
-    processor = TrainingSetProcessor(in_path, out_path)
+    out_path_training = "src/chess2/bot/data/training_data.h5"
+    out_path_validation = "src/chess2/bot/data/validation_data.h5"
+    out_path_testing = "src/chess2/bot/data/testing_data.h5"
+    processor = TrainingSetProcessor()
 
 
-    # processor.jsonl_to_h5_stream()
+    # processor.jsonl_to_h5_stream(in_path, out_path_training, 2_000_000, start_line=0)
+    # processor.jsonl_to_h5_stream(in_path, out_path_validation, 200_000, start_line=2_000_000)
+    # processor.jsonl_to_h5_stream(in_path, out_path_testing, 200_000, start_line=2_200_000)
 
 
-    # with h5py.File(out_path, "r") as file:
+    # with h5py.File(out_path_training, "r") as file:
     #     count = 0
     #     for i in range(file["input"].shape[0]):
     #         count += 1
-    #         if count%10000 == 0:
+    #         if count%10_000 == 0:
     #             print(file["depth"][i], "\n", "-----------------------------\n")
             
     #     print(count)
     
 
-    with h5py.File(out_path, "r") as file:
-        move_vec = file["move_target"][222677]
+    with h5py.File(out_path_validation, "r") as file:
+        move_vec = file["move_target"][0]
         print(processor.decode_policy_vector(move_vec))
+        print(file["depth"][0])
