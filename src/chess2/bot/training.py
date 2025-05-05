@@ -13,15 +13,16 @@ BATCH_SIZE = 64
 EPOCHS = 10 #150
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-4
+NUM_WORKERS = 5
 
 
 train_data = ChessDataset("src/chess2/bot/data/training_data.h5")
 validation_data = ChessDataset("src/chess2/bot/data/validation_data.h5")
 test_data = ChessDataset("src/chess2/bot/data/testing_data.h5")
 
-train_dataloader = DataLoader(train_data, 64, shuffle=True, num_workers=4)
-validation_dataloader = DataLoader(validation_data, 64, shuffle=True, num_workers=4)
-test_dataloader = DataLoader(test_data, 64, shuffle=True, num_workers=4)
+train_dataloader = DataLoader(train_data, 64, shuffle=True, num_workers=NUM_WORKERS)
+validation_dataloader = DataLoader(validation_data, 64, shuffle=True, num_workers=NUM_WORKERS)
+test_dataloader = DataLoader(test_data, 64, shuffle=True, num_workers=NUM_WORKERS)
 
 
 device = torch.device("cpu")
