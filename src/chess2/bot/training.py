@@ -10,8 +10,8 @@ from chess2.bot import NeuralNetwork
 
 # Hyperparameters
 BATCH_SIZE = 64
-EPOCHS = 150
-LEARNING_RATE = 1e-3
+EPOCHS = 10 #150
+LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-4
 
 
@@ -19,12 +19,12 @@ train_data = ChessDataset("src/chess2/bot/data/training_data.h5")
 validation_data = ChessDataset("src/chess2/bot/data/validation_data.h5")
 test_data = ChessDataset("src/chess2/bot/data/testing_data.h5")
 
-train_dataloader = DataLoader(train_data, 64, shuffle=True)
-validation_dataloader = DataLoader(validation_data, 64, shuffle=True)
-test_dataloader = DataLoader(test_data, 64, shuffle=True)
+train_dataloader = DataLoader(train_data, 64, shuffle=True, num_workers=4)
+validation_dataloader = DataLoader(validation_data, 64, shuffle=True, num_workers=4)
+test_dataloader = DataLoader(test_data, 64, shuffle=True, num_workers=4)
 
 
-device = "cpu"
+device = torch.device("cpu")
 model = NeuralNetwork().to(device)
 
 
@@ -74,6 +74,7 @@ def train_loop(dataloader, model, loss_policy, loss_val, optimizer, scheduler):
     model.train()
 
     for batch, (in_tensor, move_tgt, val_tgt, depth) in enumerate(dataloader):
+        move_tgt = move_tgt.argmax(dim=1).long() # since crossentropyloss takes an index (label) as argument
         move_pred, val_pred = model(in_tensor)
         optimizer.zero_grad()
 
@@ -81,12 +82,12 @@ def train_loop(dataloader, model, loss_policy, loss_val, optimizer, scheduler):
         loss = ((loss_policy(move_pred, move_tgt) + loss_val(val_pred, val_tgt)) * sample_weights).mean()
 
         loss.backward()
-        clip_grad_norm_(model.parameters(), max_norm=5)
+        clip_grad_norm_(model.parameters(), max_norm=1)
         optimizer.step()
         scheduler.step()
 
         if batch % 100 == 0:
-            loss, current = loss.item(), (batch + 1) * BATCH_SIZE
+            loss, current = loss.item(), batch * BATCH_SIZE
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
 
         
@@ -101,6 +102,7 @@ def validation_loop(dataloader, model, loss_policy, loss_val):
     # no_grad to suppress gradient computation
     with torch.no_grad():
         for (in_tensor, move_tgt, val_tgt, depth) in dataloader:
+            move_tgt = move_tgt.argmax(dim=1).long() # since crossentropyloss takes an index (label) as argument
             move_pred, val_pred = model(in_tensor)
 
             sample_weights = sample_weights_func(depth)
@@ -132,6 +134,6 @@ if __name__ == "__main__":
 
     for t in range(EPOCHS):
         print(f"Epoch {t+1}\n-------------------------------")
-        train_loop(train_dataloader, model, loss_policy, loss_val, optimizer, scheduler)
+        train_loop(test_dataloader, model, loss_policy, loss_val, optimizer, scheduler) # train_dataloader instead of test_dataloader
         validation_loop(validation_dataloader, model, loss_policy, loss_val)
     print("Done!")

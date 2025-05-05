@@ -105,8 +105,7 @@ class NeuralNetwork(nn.Module):
                 num_features=73
             ),
             nn.ReLU(inplace=True),
-            nn.Flatten(),
-            nn.Softmax()
+            nn.Flatten()
         )
 
 

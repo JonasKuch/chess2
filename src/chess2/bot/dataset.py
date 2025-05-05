@@ -4,20 +4,24 @@ import h5py
 
 class ChessDataset(Dataset):
     def __init__(self, h5path):
-        file = h5py.File(h5path, "r")
-        self.inputs = file["input"]
-        self.move_tgts = file["move_target"]
-        self.val_tgts = file["val_target"]
-        self.depth = file["depth"]
+        self.h5path = h5path
+        
+    
+    def _open_file(self):
+        """Opens the file within each worker process."""
+        return h5py.File(self.h5path, "r")
 
     
     def __len__(self):
-        return self.depth.shape[0]
+        with self._open_file() as file: # open file in every method to enable multithreading with h5 files
+            depth = file["depth"]
+            return depth.shape[0]
 
 
     def __getitem__(self, idx):
-        input_tensor = torch.from_numpy(self.inputs[idx])
-        move_tgt_tensor = torch.from_numpy(self.move_tgts[idx])
-        val_tgt_tensor = torch.tensor(self.val_tgts[idx])
-        depth_tensor = torch.tensor(self.depth[idx])
+        with self._open_file() as file: # open file in every method to enable multithreading with h5 files
+            input_tensor = torch.from_numpy(file["input"][idx])
+            move_tgt_tensor = torch.from_numpy(file["move_target"][idx])
+            val_tgt_tensor = torch.tensor([file["val_target"][idx]], dtype=torch.float32)
+            depth_tensor = torch.tensor(file["depth"][idx])
         return input_tensor, move_tgt_tensor, val_tgt_tensor, depth_tensor
