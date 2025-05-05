@@ -382,11 +382,11 @@ if __name__ == "__main__":
 
 
     # processor.jsonl_to_h5_stream(in_path, out_path_training, 2_000_000, start_line=0)
-    # processor.jsonl_to_h5_stream(in_path, out_path_validation, 200_000, start_line=2_000_000)
+    # processor.jsonl_to_h5_stream(in_path, out_path_validation, 50_000, start_line=2_000_000)
     # processor.jsonl_to_h5_stream(in_path, out_path_testing, 200_000, start_line=2_200_000)
 
 
-    # with h5py.File(out_path_training, "r") as file:
+    # with h5py.File(out_path_testing, "r") as file:
     #     count = 0
     #     for i in range(file["input"].shape[0]):
     #         count += 1
@@ -396,8 +396,8 @@ if __name__ == "__main__":
     #     print(count)
     
 
-    with h5py.File(out_path_validation, "r") as file:
-        move_vec = file["move_target"][0]
-        print(processor.decode_policy_vector(move_vec))
-        print(file["depth"][0])
-        print(file["move_target"].shape)
+    # with h5py.File(out_path_validation, "r") as file:
+    #     move_vec = file["move_target"][0]
+    #     print(processor.decode_policy_vector(move_vec))
+    #     print(file["depth"][0])
+    #     print(file["move_target"].shape)
