@@ -6,6 +6,7 @@ from torch.utils.data import DataLoader
 from torch.nn.utils import clip_grad_norm_
 from chess2.bot import ChessDataset
 from chess2.bot import NeuralNetwork
+from glob import glob
 
 
 # Hyperparameters
@@ -13,12 +14,12 @@ BATCH_SIZE = 64
 EPOCHS = 10 #150
 LEARNING_RATE = 1e-4
 WEIGHT_DECAY = 1e-4
-NUM_WORKERS = 5
+NUM_WORKERS = 6
 
 
-train_data = ChessDataset("src/chess2/bot/data/training_data.h5")
-validation_data = ChessDataset("src/chess2/bot/data/validation_data.h5")
-test_data = ChessDataset("src/chess2/bot/data/testing_data.h5")
+train_data = ChessDataset(glob("src/chess2/bot/data/train/*.npz"))
+validation_data = ChessDataset(glob("src/chess2/bot/data/validation/*.npz"))
+test_data = ChessDataset(glob("src/chess2/bot/data/test/*.npz"))
 
 train_dataloader = DataLoader(train_data, 64, shuffle=True, num_workers=NUM_WORKERS)
 validation_dataloader = DataLoader(validation_data, 64, shuffle=True, num_workers=NUM_WORKERS)

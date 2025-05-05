@@ -1,6 +1,7 @@
 import orjson as json
 import numpy as np
 from multiprocessing import Pool, cpu_count
+import warnings
 
 # rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 
@@ -302,6 +303,15 @@ class TrainingSetProcessor:
 
     def jsonl_to_npz_stream(self, in_path, out_path, filename, desired_len, file_size=10000, start_line=0):
 
+        files_total = desired_len // file_size
+        real_len = files_total*file_size
+        if real_len != desired_len:
+            warnings.warn(
+                f"The desired dataset length is {desired_len}, but only {real_len} possible with file size {file_size}",
+                category=UserWarning,
+                stacklevel=2
+            )
+
         with open(in_path, "r") as in_file:
 
             in_tensor_list, move_target_list, val_target_list, depth_list = [], [], [], []
@@ -339,19 +349,20 @@ class TrainingSetProcessor:
 
                     in_tensor_list, move_target_list, val_target_list, depth_list = [], [], [], []
 
+            # To make every file the same length this following part is commented out
                 
-            if in_tensor_list:
-                np.savez_compressed(
-                    f"{out_path}/{filename}_{file_num}.npz",
-                    input=np.asarray(in_tensor_list,          dtype=np.float32),
-                    move_target=np.asarray(move_target_list,  dtype=np.int8),
-                    val_target=np.asarray(val_target_list,    dtype=np.float32),
-                    depth=np.asarray(depth_list,              dtype=np.int16)
-                )
+            # if in_tensor_list:
+            #     np.savez_compressed(
+            #         f"{out_path}/{filename}_{file_num}.npz",
+            #         input=np.asarray(in_tensor_list,          dtype=np.float32),
+            #         move_target=np.asarray(move_target_list,  dtype=np.int8),
+            #         val_target=np.asarray(val_target_list,    dtype=np.float32),
+            #         depth=np.asarray(depth_list,              dtype=np.int16)
+            #     )
                     
-                file_num += 1
+            #     file_num += 1
 
-                in_tensor_list, move_target_list, val_target_list, depth_list = [], [], [], []
+            #     in_tensor_list, move_target_list, val_target_list, depth_list = [], [], [], []
 
 
 if __name__ == "__main__":
@@ -362,12 +373,13 @@ if __name__ == "__main__":
     processor = TrainingSetProcessor()
 
 
-    processor.jsonl_to_npz_stream(in_path, out_path_training, "train", 2_000_000, start_line=0)
-    processor.jsonl_to_npz_stream(in_path, out_path_validation, "val", 200_000, start_line=2_000_000)
-    processor.jsonl_to_npz_stream(in_path, out_path_testing, "test", 200_000, start_line=2_200_000)
+    # processor.jsonl_to_npz_stream(in_path, out_path_training, "train", 2_000_000, start_line=0)
+    # processor.jsonl_to_npz_stream(in_path, out_path_validation, "val", 200_000, start_line=2_000_000)
+    # processor.jsonl_to_npz_stream(in_path, out_path_testing, "test", 200_000, start_line=2_200_000)
 
 
-    # with h5py.File(out_path_training, "r") as file:
+    # with np.load(out_path_training+"/train_0.npz", "r") as file:
+    #     print(type(file))
     #     count = 0
     #     for i in range(file["input"].shape[0]):
     #         count += 1
@@ -375,3 +387,7 @@ if __name__ == "__main__":
     #             print(file["depth"][i], "\n", "-----------------------------\n")
             
     #     print(count)
+
+    from glob import glob
+
+    print(len(glob("src/chess2/bot/data/train/*.npz")))
