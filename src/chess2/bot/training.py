@@ -107,7 +107,7 @@ def validation_loop(dataloader, model, loss_policy, loss_val):
 
             sample_weights = sample_weights_func(depth)
             validation_loss += ((loss_policy(move_pred, move_tgt) + loss_val(val_pred, val_tgt)) * sample_weights).mean().item()
-            correct += (move_pred.argmax(1) == move_tgt.argmax(1)).type(torch.float).sum().item()
+            correct += (move_pred.argmax(dim=1).long() == move_tgt).type(torch.float).sum().item()
 
     validation_loss /= num_batches
     correct /= size
