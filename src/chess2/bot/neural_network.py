@@ -1,7 +1,4 @@
-import torch
 from torch import nn
-from torch.utils.data import DataLoader
-from chess2.bot import ChessDataset
 
 
 '''
@@ -108,7 +105,8 @@ class NeuralNetwork(nn.Module):
                 num_features=73
             ),
             nn.ReLU(inplace=True),
-            nn.Flatten()
+            nn.Flatten(),
+            nn.Softmax()
         )
 
 

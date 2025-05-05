@@ -118,23 +118,23 @@ if __name__ == "__main__":
     workers = cpu_count()
     desired_data = 3_000_000
 
-    stream(in_path=in_path, out_path=out_path, min_depth=min_depth, workers=workers, desired_data=desired_data)
+    # stream(in_path=in_path, out_path=out_path, min_depth=min_depth, workers=workers, desired_data=desired_data)
 
 
 
 
-    # with open(out_path, "r") as file:
-    #     num = 0
-    #     val_list = []
-    #     for line in file:
-    #         data = json.loads(line)
-    #         val = data.get("val")
-    #         val_list.append(val)
-    #         num += 1
-    #         if num > 100_000:
-    #             break
+    with open(out_path, "r") as file:
+        num = 0
+        depth_list = []
+        for line in file:
+            data = json.loads(line)
+            depth = data.get("depth")
+            depth_list.append(depth)
+            num += 1
+            if num > 100_000:
+                break
 
-    # plt.hist(val_list, bins=100)
-    # plt.yscale("log")
-    # plt.show()
-    # print(np.mean(val_list))
+    plt.hist(depth_list, bins=100)
+    plt.yscale("log")
+    plt.show()
+    print(np.mean(depth_list))
