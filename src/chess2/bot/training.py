@@ -75,18 +75,7 @@ def train_loop(dataloader, model, loss_policy, loss_val, optimizer):
 
     for batch, (in_tensor, move_tgt, val_tgt, depth, moves_mask) in enumerate(dataloader):
         move_tgt = move_tgt.argmax(dim=1).long() # since crossentropyloss takes an index (label) as argument
-        
-        with torch.no_grad():
-            # gather the mask value at the true-index for each sample
-            illegal_at_target = (~moves_mask.bool()) \
-                                .gather(1, move_tgt.view(-1,1)) \
-                                .sum().item()
-            if illegal_at_target > 0:
-                print(f"{illegal_at_target} samples in this batch have the true move masked out!")
-                print(moves_mask, ~moves_mask.bool())
-
         move_pred, val_pred = model(in_tensor)
-
         move_pred = move_pred.masked_fill(~moves_mask.bool(), -1e9)
 
         optimizer.zero_grad()
@@ -127,6 +116,8 @@ def validation_loop(dataloader, model, loss_policy, loss_val):
     correct /= size
 
     print(f"Validation Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss per batch: {validation_loss:>8f} \n")
+
+    return validation_loss
             
 
 
@@ -149,9 +140,9 @@ if __name__ == "__main__":
     for t in range(EPOCHS):
         print(f"Epoch {t+1}\n-------------------------------")
         train_loop(train_dataloader, model, loss_policy, loss_val, optimizer) # train_dataloader instead of test_dataloader
-        scheduler.step()
         print("LR:", optimizer.param_groups[0]['lr'])
-        validation_loop(validation_dataloader, model, loss_policy, loss_val)
+        val_loss = validation_loop(validation_dataloader, model, loss_policy, loss_val)
+        scheduler.step(val_loss)
     print("Done!")
 
     torch.save(model.state_dict(), 'src/chess2/bot/saved_models/model_64_30_1e-3_1e-4.pth')
