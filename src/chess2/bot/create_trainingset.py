@@ -1,7 +1,7 @@
 import orjson as json
+import h5py
 import numpy as np
 from multiprocessing import Pool, cpu_count
-import warnings
 
 # rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 
@@ -301,23 +301,35 @@ class TrainingSetProcessor:
         return in_tensor, move_target, val_target, depth
 
 
-    def jsonl_to_npz_stream(self, in_path, out_path, filename, desired_len, file_size=10000, start_line=0):
+    def append_block(self, file, in_tensor_block, move_target_block, val_target_block, depth_block):
 
-        files_total = desired_len // file_size
-        real_len = files_total*file_size
-        if real_len != desired_len:
-            warnings.warn(
-                f"The desired dataset length is {desired_len}, but only {real_len} possible with file size {file_size}",
-                category=UserWarning,
-                stacklevel=2
-            )
+        for name, block in [
+            ("input", in_tensor_block),
+            ("move_target", move_target_block),
+            ("val_target", val_target_block),
+            ("depth", depth_block)
+        ]:
+            dataset = file[name]
+            old_len = dataset.shape[0]
+            block_len = block.shape[0]
+            new_len = old_len + block_len
+            dataset.resize((new_len, ) + dataset.shape[1:])
+            dataset[old_len:new_len, ...] = block
 
-        with open(in_path, "r") as in_file:
+
+    def jsonl_to_h5_stream(self, in_path, out_path, desired_len, chunk_size=1000, start_line=0):
+
+        with open(in_path, "r") as in_file, \
+            h5py.File(out_path, "w") as out_file:
+            
+            out_file.create_dataset("input", (0, 18, 8, 8), dtype=np.float32, maxshape=(None, 18, 8, 8), chunks=(chunk_size, 18, 8, 8), compression="gzip")
+            out_file.create_dataset("move_target", (0, 4672), dtype=np.int8, maxshape = (None, 4672), chunks = (chunk_size, 4672), compression="gzip")
+            out_file.create_dataset("val_target", (0, ), dtype = np.float32, maxshape=(None, ), chunks=(chunk_size, ), compression="gzip")
+            out_file.create_dataset("depth", (0, ), dtype=np.int8, maxshape=(None, ), chunks=(chunk_size, ), compression="gzip")
 
             in_tensor_list, move_target_list, val_target_list, depth_list = [], [], [], []
             line_num = 0
             set_len = 0
-            file_num = 0
 
             for line in in_file:
                 line_num += 1
@@ -326,8 +338,6 @@ class TrainingSetProcessor:
                 set_len += 1
                 if set_len > desired_len:
                     break
-                if set_len % 100000 == 0:
-                    print(f"Processed {set_len}/{desired_len} lines...")
 
                 in_tensor, move_target, val_target, depth = self.reformat(line)
 
@@ -336,50 +346,47 @@ class TrainingSetProcessor:
                 val_target_list.append(val_target)
                 depth_list.append(depth)
 
-                if len(in_tensor_list) >= file_size:
-                    np.savez_compressed(
-                        f"{out_path}/{filename}_{file_num}.npz",
-                        input=np.asarray(in_tensor_list,          dtype=np.float32),
-                        move_target=np.asarray(move_target_list,  dtype=np.int8),
-                        val_target=np.asarray(val_target_list,    dtype=np.float32),
-                        depth=np.asarray(depth_list,              dtype=np.int16)
+                if len(in_tensor_list) >= chunk_size:
+                    self.append_block(
+                        out_file,
+                        np.asarray(in_tensor_list,    dtype=np.float32),
+                        np.asarray(move_target_list,  dtype=np.int8),
+                        np.asarray(val_target_list,   dtype=np.float32),
+                        np.asarray(depth_list,        dtype=np.int16)
                     )
-                        
-                    file_num += 1
-
-                    in_tensor_list, move_target_list, val_target_list, depth_list = [], [], [], []
-
-            # To make every file the same length this following part is commented out
+                    in_tensor_list.clear()
+                    move_target_list.clear()
+                    val_target_list.clear()
+                    depth_list.clear()
                 
-            # if in_tensor_list:
-            #     np.savez_compressed(
-            #         f"{out_path}/{filename}_{file_num}.npz",
-            #         input=np.asarray(in_tensor_list,          dtype=np.float32),
-            #         move_target=np.asarray(move_target_list,  dtype=np.int8),
-            #         val_target=np.asarray(val_target_list,    dtype=np.float32),
-            #         depth=np.asarray(depth_list,              dtype=np.int16)
-            #     )
-                    
-            #     file_num += 1
-
-            #     in_tensor_list, move_target_list, val_target_list, depth_list = [], [], [], []
+            if in_tensor_list:
+                self.append_block(
+                    out_file,
+                    np.asarray(in_tensor_list,    dtype=np.float32),
+                    np.asarray(move_target_list,  dtype=np.int8),
+                    np.asarray(val_target_list,   dtype=np.float32),
+                    np.asarray(depth_list,        dtype=np.int16)
+                )
+                in_tensor_list.clear()
+                move_target_list.clear()
+                val_target_list.clear()
+                depth_list.clear()
 
 
 if __name__ == "__main__":
     in_path = "src/chess2/bot/data/lichess_filtered.jsonl"
-    out_path_training = "src/chess2/bot/data/train"
-    out_path_validation = "src/chess2/bot/data/validation"
-    out_path_testing = "src/chess2/bot/data/test"
+    out_path_training = "src/chess2/bot/data/training_data.h5"
+    out_path_validation = "src/chess2/bot/data/validation_data.h5"
+    out_path_testing = "src/chess2/bot/data/testing_data.h5"
     processor = TrainingSetProcessor()
 
 
-    # processor.jsonl_to_npz_stream(in_path, out_path_training, "train", 2_000_000, start_line=0)
-    # processor.jsonl_to_npz_stream(in_path, out_path_validation, "val", 200_000, start_line=2_000_000)
-    # processor.jsonl_to_npz_stream(in_path, out_path_testing, "test", 200_000, start_line=2_200_000)
+    # processor.jsonl_to_h5_stream(in_path, out_path_training, 2_000_000, start_line=0)
+    # processor.jsonl_to_h5_stream(in_path, out_path_validation, 50_000, start_line=2_000_000)
+    # processor.jsonl_to_h5_stream(in_path, out_path_testing, 200_000, start_line=2_200_000)
 
 
-    # with np.load(out_path_training+"/train_0.npz", "r") as file:
-    #     print(type(file))
+    # with h5py.File(out_path_testing, "r") as file:
     #     count = 0
     #     for i in range(file["input"].shape[0]):
     #         count += 1
@@ -387,7 +394,10 @@ if __name__ == "__main__":
     #             print(file["depth"][i], "\n", "-----------------------------\n")
             
     #     print(count)
+    
 
-    from glob import glob
-
-    print(len(glob("src/chess2/bot/data/train/*.npz")))
+    # with h5py.File(out_path_validation, "r") as file:
+    #     move_vec = file["move_target"][0]
+    #     print(processor.decode_policy_vector(move_vec))
+    #     print(file["depth"][0])
+    #     print(file["move_target"].shape)
