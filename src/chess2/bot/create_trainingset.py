@@ -3,6 +3,7 @@ import h5py
 import numpy as np
 from multiprocessing import Pool, cpu_count
 import chess
+import copy
 
 # rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 
@@ -10,6 +11,11 @@ class TrainingSetProcessor:
     def __init__(self):
         # move_index_map = { self.index_to_uci(i):i for i in range(4672) }
         pass
+    
+
+    def flip_coords(col, row):
+        return 7-col, 7-row 
+
 
     def fen_to_tensor(self, fen):
         tensor = np.zeros((18, 8, 8), dtype=np.float32)
@@ -50,21 +56,34 @@ class TrainingSetProcessor:
                 if char.isdigit():
                     col_idx += int(char)
                 else:
-                    tensor[piece_map[char], 7-row_idx, col_idx] = 1
+                    c, r = col_idx, row_idx
+
+                    if side_to_move == "b":
+                        c, r = self.flip_coords(c, r)
+
+                    tensor[piece_map[char], r, c] = 1
                     col_idx += 1
 
         tensor[12, :, :] = 1 if side_to_move == "w" else 0
 
-        tensor[13, :, :] = 1 if "K" in castling_rights else 0
-        tensor[14, :, :] = 1 if "Q" in castling_rights else 0
-        tensor[15, :, :] = 1 if "k" in castling_rights else 0
-        tensor[16, :, :] = 1 if "q" in castling_rights else 0
+        tensor[13, 7, 7] = 1 if "K" in castling_rights else 0
+        tensor[14, 7, 0] = 1 if "Q" in castling_rights else 0
+        tensor[15, 0, 7] = 1 if "k" in castling_rights else 0
+        tensor[16, 0, 0] = 1 if "q" in castling_rights else 0
+        
+        if side_to_move == "b":
+            castling_tensors = [copy.deepcopy(tensor[i]) for i in range(13, 17)]
+            tensor[13] = np.flip(castling_tensors[2], axis=(0, 1))
+            tensor[14] = np.flip(castling_tensors[3], axis=(0, 1))
+            tensor[15] = np.flip(castling_tensors[0], axis=(0, 1))
+            tensor[16] = np.flip(castling_tensors[1], axis=(0, 1))
 
         if en_passant_target != "-":
             file_map = {'a': 0, 'b': 1, 'c': 2, 'd': 3,
                         'e': 4, 'f': 5, 'g': 6, 'h': 7}
-            col = file_map[en_passant_target[0]]
-            row = 8 - int(en_passant_target[1])
+            col, row = file_map[en_passant_target[0]], 8 - int(en_passant_target[1])
+            if side_to_move == "b":
+                col, row = self.flip_coords(col, row)
             tensor[17, row, col] = 1
         
         return tensor
