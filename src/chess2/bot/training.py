@@ -145,4 +145,4 @@ if __name__ == "__main__":
         scheduler.step(val_loss)
     print("Done!")
 
-    torch.save(model.state_dict(), 'src/chess2/bot/saved_models/model_64_30_1e-3_1e-4.pth')
+    torch.save(model.state_dict(), 'src/chess2/bot/saved_models/model_64_30_1e-3_1e-4_with_mask.pth')
