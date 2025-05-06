@@ -508,24 +508,30 @@ if __name__ == "__main__":
 
 
 
-    with h5py.File("src/chess2/bot/data/training_data.h5", "r") as file:
-        counter = 0
-        for idx in range(200_000):
-            move_mask = file["moves_mask"][idx]
-            move_pred = file["move_target"][idx]
-            side_to_move = "w" if file["input"][idx, 12, 0, 0] == 1 else "b"
+    with h5py.File(out_path_testing, "r") as file:
+        move_mask = file["moves_mask"][:]
+        move_pred = file["move_target"][:]
+        in_tens = file["input"][:]
 
-            move_idx = np.argmax(move_pred)
-            if move_mask[move_idx] == 0:
-                print("\n", idx)
-                print(np.argmax(move_pred))
-                print(processor.decode_policy_vector(move_pred, side_to_move))
-                counter += 1
-            if idx%1000 == 0:
-                print(f"\n{idx}/200000")
-                print(counter)
+    counter = 0
+    for idx in range(200000):
+        move_mask_i = move_mask[idx]
+        move_pred_i = move_pred[idx]
+        side_to_move = "w" if in_tens[idx, 12, 0, 0] == 1 else "b"
 
-        print(counter)
+        move_idx = np.argmax(move_pred_i)
+        if move_mask_i[move_idx] == 0:
+            print("\n", idx)
+            print(move_idx)
+            print(processor.decode_policy_vector(move_pred_i, side_to_move))
+            counter += 1
+        if idx % 1000 == 0:
+            print(f"\n{idx}/200000")
+            print(counter)
+
+    print(counter)
+
+    print(move_mask.shape[0])
 
 
         # test if shape of mask and move_tgt are the same
