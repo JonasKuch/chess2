@@ -10,7 +10,7 @@ from chess2.bot import NeuralNetwork
 
 # Hyperparameters
 BATCH_SIZE = 64
-EPOCHS = 10 #150
+EPOCHS = 25 #150
 LEARNING_RATE = 1e-3 #1e-4 was good
 WEIGHT_DECAY = 1e-4
 NUM_WORKERS = 5
