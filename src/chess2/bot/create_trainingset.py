@@ -384,7 +384,7 @@ class TrainingSetProcessor:
                 set_len += 1
                 if set_len > desired_len:
                     break
-                if (set_len-1)%1000 == 0:
+                if (set_len-1)%10000 == 0:
                     print(f"{set_len-1} / {desired_len}")
 
                 in_tensor, move_target, val_target, depth = self.reformat(line)
@@ -423,15 +423,15 @@ class TrainingSetProcessor:
 
 if __name__ == "__main__":
     in_path = "src/chess2/bot/data/lichess_filtered.jsonl"
-    out_path_training = "src/chess2/bot/data/training_data_2.h5"
-    out_path_validation = "src/chess2/bot/data/validation_data-2.h5"
-    out_path_testing = "src/chess2/bot/data/testing_data_2.h5"
+    out_path_training = "src/chess2/bot/data/training_data.h5"
+    out_path_validation = "src/chess2/bot/data/validation_data.h5"
+    out_path_testing = "src/chess2/bot/data/testing_data.h5"
     processor = TrainingSetProcessor()
 
 
-    # processor.jsonl_to_h5_stream(in_path, out_path_training, 10000, start_line=0) # 2_000_000
-    # processor.jsonl_to_h5_stream(in_path, out_path_validation, 5000, start_line=2_000_000) # 50_000
-    # processor.jsonl_to_h5_stream(in_path, out_path_testing, 2000, start_line=2_200_000) # 200_000
+    # processor.jsonl_to_h5_stream(in_path, out_path_training, 200_000, start_line=0)
+    # processor.jsonl_to_h5_stream(in_path, out_path_validation, 50_000, start_line=200_000) 
+    # processor.jsonl_to_h5_stream(in_path, out_path_testing, 200_000, start_line=250_000)
 
 
     # with h5py.File(out_path_testing, "r") as file:
@@ -456,3 +456,14 @@ if __name__ == "__main__":
 
 
         # print(np.argmax(move_vec))
+
+
+
+    # with h5py.File("src/chess2/bot/data/training_data.h5", "r") as file:
+    #     idx = 2848
+    #     move_vec = file["move_target"][idx]
+    #     side_to_move = "w" if file["input"][idx, 12, 0, 0] == 1 else "b"
+    #     predicted_move = processor.decode_policy_vector(move_vec, side_to_move)
+    #     print(predicted_move)
+    #     for i in range(18):
+    #         print(file["input"][idx, i])
