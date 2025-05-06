@@ -40,13 +40,12 @@ optimizer = torch.optim.Adam(
 )
 
 
-scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(
-    optimizer=optimizer,
-    T_0=10,         # Restart after 10 epochs
-    T_mult=2,       # Restart time every time
-    eta_min=1e-6    # minimum learning rate
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    optimizer,
+    mode="min",
+    factor=0.5,
+    patience=3
 )
-
 
 def sample_weights_func(depth):
     '''
@@ -68,15 +67,28 @@ def sample_weights_func(depth):
     return 1/(1+torch.exp(-(d-m)/s))
 
 
-def train_loop(dataloader, model, loss_policy, loss_val, optimizer, scheduler):
+def train_loop(dataloader, model, loss_policy, loss_val, optimizer):
     size = len(dataloader.dataset)
 
     # Set the model to training mode - important for batch normalization and dropout layers
     model.train()
 
-    for batch, (in_tensor, move_tgt, val_tgt, depth) in enumerate(dataloader):
+    for batch, (in_tensor, move_tgt, val_tgt, depth, moves_mask) in enumerate(dataloader):
         move_tgt = move_tgt.argmax(dim=1).long() # since crossentropyloss takes an index (label) as argument
+        
+        with torch.no_grad():
+            # gather the mask value at the true-index for each sample
+            illegal_at_target = (~moves_mask.bool()) \
+                                .gather(1, move_tgt.view(-1,1)) \
+                                .sum().item()
+            if illegal_at_target > 0:
+                print(f"{illegal_at_target} samples in this batch have the true move masked out!")
+                print(moves_mask, ~moves_mask.bool())
+
         move_pred, val_pred = model(in_tensor)
+
+        move_pred = move_pred.masked_fill(~moves_mask.bool(), -1e9)
+
         optimizer.zero_grad()
 
         sample_weights = sample_weights_func(depth)
@@ -101,9 +113,11 @@ def validation_loop(dataloader, model, loss_policy, loss_val):
 
     # no_grad to suppress gradient computation
     with torch.no_grad():
-        for (in_tensor, move_tgt, val_tgt, depth) in dataloader:
+        for (in_tensor, move_tgt, val_tgt, depth, moves_mask) in dataloader:
             move_tgt = move_tgt.argmax(dim=1).long() # since crossentropyloss takes an index (label) as argument
             move_pred, val_pred = model(in_tensor)
+            move_pred = move_pred.masked_fill(~moves_mask.bool(), -1e9)
+
 
             sample_weights = sample_weights_func(depth)
             validation_loss += ((loss_policy(move_pred, move_tgt) + loss_val(val_pred, val_tgt)) * sample_weights).mean().item()
@@ -134,8 +148,9 @@ if __name__ == "__main__":
 
     for t in range(EPOCHS):
         print(f"Epoch {t+1}\n-------------------------------")
-        train_loop(test_dataloader, model, loss_policy, loss_val, optimizer, scheduler) # train_dataloader instead of test_dataloader
+        train_loop(train_dataloader, model, loss_policy, loss_val, optimizer) # train_dataloader instead of test_dataloader
         scheduler.step()
+        print("LR:", optimizer.param_groups[0]['lr'])
         validation_loop(validation_dataloader, model, loss_policy, loss_val)
     print("Done!")
 

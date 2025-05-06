@@ -24,4 +24,5 @@ class ChessDataset(Dataset):
             move_tgt_tensor = torch.from_numpy(file["move_target"][idx])
             val_tgt_tensor = torch.tensor([file["val_target"][idx]], dtype=torch.float32)
             depth_tensor = torch.tensor(file["depth"][idx])
-        return input_tensor, move_tgt_tensor, val_tgt_tensor, depth_tensor
+            moves_mask = torch.from_numpy(file["moves_mask"][idx])
+        return input_tensor, move_tgt_tensor, val_tgt_tensor, depth_tensor, moves_mask

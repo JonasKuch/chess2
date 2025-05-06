@@ -321,8 +321,8 @@ class TrainingSetProcessor:
     def legal_moves_mask(self, fen):
         vector = np.zeros(4672, dtype=np.int8)
         board = chess.Board(fen)
-        side_to_move = fen.split()[1]
-        # side_to_move = "w" if board.turn else "b"
+        # side_to_move = fen.split()[1]
+        side_to_move = "w" if board.turn else "b"
 
         for move in board.legal_moves:
             uci = move.uci()
@@ -331,12 +331,35 @@ class TrainingSetProcessor:
         
         return vector
 
+    def correct_castling_move(self, fen: str, move_uci: str) -> str:
+        """
+        Corrects incorrect castling UCI strings (like 'e1h1') into standard ones (like 'e1g1'),
+        using only FEN castling rights for verification.
+        """
+        castling_rights = fen.split()[2]  # e.g., "KQkq"
+        corrections = {
+            "e1h1": ("K", "e1g1"),  # White king-side
+            "e1a1": ("Q", "e1c1"),  # White queen-side
+            "e8h8": ("k", "e8g8"),  # Black king-side
+            "e8a8": ("q", "e8c8"),  # Black queen-side
+        }
+
+        required_flag, corrected_move = corrections.get(move_uci, (None, move_uci))
+
+        if required_flag and required_flag in castling_rights:
+            return corrected_move
+
+        return move_uci
 
     def reformat(self, line):
         data = json.loads(line)
 
         fen = data.get("fen")
         best_move = data.get("best_move")
+
+        if best_move in ["e1h1", "e1a1", "e8h8", "e8a8"]:
+            best_move = self.correct_castling_move(fen, best_move)
+
         val = data.get("val")
         depth = data.get("depth")
 
@@ -393,6 +416,10 @@ class TrainingSetProcessor:
                     print(f"{set_len-1} / {desired_len}")
 
                 in_tensor, move_target, val_target, depth, moves_mask = self.reformat(line)
+
+
+
+
 
                 in_tensor_list.append(in_tensor)
                 move_target_list.append(move_target)
@@ -482,11 +509,23 @@ if __name__ == "__main__":
 
 
     with h5py.File("src/chess2/bot/data/training_data.h5", "r") as file:
-        for idx in range(1000):
+        counter = 0
+        for idx in range(200_000):
             move_mask = file["moves_mask"][idx]
             move_pred = file["move_target"][idx]
             side_to_move = "w" if file["input"][idx, 12, 0, 0] == 1 else "b"
 
-            masked = move_mask*move_pred
-            
-            print(processor.decode_policy_vector(masked, side_to_move))
+            move_idx = np.argmax(move_pred)
+            if move_mask[move_idx] == 0:
+                print("\n", idx)
+                print(np.argmax(move_pred))
+                print(processor.decode_policy_vector(move_pred, side_to_move))
+                counter += 1
+            if idx%1000 == 0:
+                print(f"\n{idx}/200000")
+                print(counter)
+
+        print(counter)
+
+
+        # test if shape of mask and move_tgt are the same
