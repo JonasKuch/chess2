@@ -2,10 +2,14 @@ import orjson as json
 import h5py
 import numpy as np
 from multiprocessing import Pool, cpu_count
+import chess
 
 # rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 
 class TrainingSetProcessor:
+    def __init__(self):
+        # move_index_map = { self.index_to_uci(i):i for i in range(4672) }
+        pass
 
     def fen_to_tensor(self, fen):
         tensor = np.zeros((18, 8, 8), dtype=np.float32)
@@ -67,17 +71,17 @@ class TrainingSetProcessor:
 
 
     def best_move_one_hot(self, best_move):
-        vector = np.zeros(4672)
+
         """
         queen-like moves:
 
-        1 step forwards
-        2 steps forwards
+        1 step forward
+        2 steps forward
         ...
-        7 steps forwards
-        1 step diagonally right forwards
+        7 steps forward
+        1 step diagonally right forward
         ...
-        7 steps diagonally right forwards
+        7 steps diagonally right forward
         1 step right
         ...
         7 steps right
@@ -89,7 +93,7 @@ class TrainingSetProcessor:
         ...
         1 step left
         ...
-        1 step diagonally left forwards
+        1 step diagonally left forward
         ...
 
         
@@ -283,6 +287,18 @@ class TrainingSetProcessor:
         """
         idx = int(np.argmax(vec))
         return self.index_to_uci(idx)
+    
+
+    def legal_moves_mask(self, fen):
+        vector = np.zeros(4672, dtype=np.int8)
+        board = chess.Board(fen)
+
+        for move in board.legal_moves:
+            uci = move.uci()
+            idx = np.argmax(self.best_move_one_hot(uci))
+            vector[idx] = 1
+        
+        return vector
 
 
     def reformat(self, line):
@@ -396,8 +412,8 @@ if __name__ == "__main__":
     #     print(count)
     
 
-    # with h5py.File(out_path_validation, "r") as file:
-    #     move_vec = file["move_target"][0]
-    #     print(processor.decode_policy_vector(move_vec))
-    #     print(file["depth"][0])
-    #     print(file["move_target"].shape)
+    with h5py.File(out_path_training, "r") as file:
+        move_vec = file["move_target"][142002]
+        print(processor.decode_policy_vector(move_vec))
+        print(file["depth"][0])
+        print(file["move_target"].shape)
