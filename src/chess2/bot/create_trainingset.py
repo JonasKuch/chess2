@@ -13,7 +13,7 @@ class TrainingSetProcessor:
         pass
     
 
-    def flip_coords(col, row):
+    def flip_coords(self, col, row):
         return 7-col, 7-row 
 
 
@@ -38,6 +38,9 @@ class TrainingSetProcessor:
         Black Kingside Castling
         Black Queenside Castling
         En Passant Target Square (marked as 1, all others 0)
+
+
+        always from perspective of player to move
         '''
 
         piece_map = {"P":0, "N":1, "B":2, "R":3, "Q":4, "K":5,
@@ -86,10 +89,10 @@ class TrainingSetProcessor:
                 col, row = self.flip_coords(col, row)
             tensor[17, row, col] = 1
         
-        return tensor
+        return tensor, side_to_move
 
 
-    def best_move_one_hot(self, best_move):
+    def best_move_one_hot(self, best_move, side_to_move):
 
         """
         queen-like moves:
@@ -153,14 +156,18 @@ class TrainingSetProcessor:
         64th entry is 2 steps ahead from a1,
         ...
 
+        Total: 4672 entries
+
+        always from perspective of player to move
+
         """
 
         # Initialize one-hot vector
         vector = np.zeros(4672, dtype=np.int8)
 
         # Map files and ranks to 0-based indices
-        file_map = {f: i for i, f in enumerate('abcdefgh')}
-        rank_map = {r: i for i, r in enumerate('12345678')}
+        file_map = {f: i for i, f in enumerate('abcdefgh')} if side_to_move == "w" else {f: 7-i for i, f in enumerate('abcdefgh')}
+        rank_map = {r: 7-i for i, r in enumerate('12345678')} if side_to_move == "w" else {r: i for i, r in enumerate('12345678')}
 
         # Direction vectors for sliding (queen-like) moves
         slide_dirs = [(0, 1), (1, 1), (1, 0), (1, -1),
@@ -176,10 +183,10 @@ class TrainingSetProcessor:
 
         sx, sy = file_map[frm[0]], rank_map[frm[1]]
         ex, ey = file_map[to[0]], rank_map[to[1]]
-        dx, dy = ex - sx, ey - sy
+        dx, dy = ex - sx, sy - ey                           # dy > 0 --> forward, dx > 0 --> right
 
         # Compute from-square index: a1=0, b1=1, ..., h8=63
-        from_index = sy * 8 + sx
+        from_index = (7-sy) * 8 + sx
 
         move_type = None
 
@@ -224,7 +231,7 @@ class TrainingSetProcessor:
         return vector
 
 
-    def index_to_uci(self, idx: int) -> str:
+    def index_to_uci(self, idx: int, side_to_move) -> str:
         """
         Decode a single move-index in [0,4671] to UCI string.
         """
@@ -250,11 +257,14 @@ class TrainingSetProcessor:
         _FILE_LETTERS = "abcdefgh"
         _RANK_LETTERS = "12345678"
 
+        file_map = {i: f for i, f in enumerate('abcdefgh')} if side_to_move == "w" else {7-i: f for i, f in enumerate('abcdefgh')}
+        rank_map = {7-i: r for i, r in enumerate('12345678')} if side_to_move == "w" else {i: r for i, r in enumerate('12345678')}
+
         # split into move_type (0–72) and from-square (0–63)
         move_type = idx // 64
         from_sq   = idx % 64
         fx = from_sq % 8
-        fy = from_sq // 8
+        fy = 7 - from_sq // 8
 
         # default: no promotion
         promo = ""
@@ -265,14 +275,14 @@ class TrainingSetProcessor:
             distance = (move_type % 7) + 1
             dx, dy = _SLIDE_DIRS[dir_idx]
             tx = fx + dx * distance
-            ty = fy + dy * distance
+            ty = fy - dy * distance
 
         # knight moves
         elif move_type < 64:
             k_idx = move_type - 56
             dx, dy = _KNIGHT_DIRS[k_idx]
             tx = fx + dx
-            ty = fy + dy
+            ty = fy - dy
 
         # underpromotions (non‑queen)
         else:
@@ -289,32 +299,33 @@ class TrainingSetProcessor:
             else:
                 dx = 1
             tx = fx + dx
-            ty = fy + dy
+            ty = fy - dy
             promo = {0:'n',1:'n',2:'n', 3:'b',4:'b',5:'b', 6:'r',7:'r',8:'r'}[up]
 
         # convert coords back to UCI
         def square(x,y):
-            return _FILE_LETTERS[x] + _RANK_LETTERS[y]
+            return file_map[x] + rank_map[y]
 
         return square(fx, fy) + square(tx, ty) + promo
 
 
-    def decode_policy_vector(self, vec):
+    def decode_policy_vector(self, vec, side_to_move):
         """
         Given a length-4672 policy vector (logits or probs or one-hot),
         pick the highest entry and return its UCI move.
         """
         idx = int(np.argmax(vec))
-        return self.index_to_uci(idx)
+        return self.index_to_uci(idx, side_to_move)
     
 
     def legal_moves_mask(self, fen):
         vector = np.zeros(4672, dtype=np.int8)
         board = chess.Board(fen)
+        side_to_move = fen.split()[1]
 
         for move in board.legal_moves:
             uci = move.uci()
-            idx = np.argmax(self.best_move_one_hot(uci))
+            idx = np.argmax(self.best_move_one_hot(uci, side_to_move))
             vector[idx] = 1
         
         return vector
@@ -328,8 +339,8 @@ class TrainingSetProcessor:
         val = data.get("val")
         depth = data.get("depth")
 
-        in_tensor = self.fen_to_tensor(fen)
-        move_target = self.best_move_one_hot(best_move)
+        in_tensor, side_to_move = self.fen_to_tensor(fen)
+        move_target = self.best_move_one_hot(best_move, side_to_move)
         val_target = np.float32(val)
         depth = np.float32(depth)
 
@@ -373,6 +384,8 @@ class TrainingSetProcessor:
                 set_len += 1
                 if set_len > desired_len:
                     break
+                if (set_len-1)%1000 == 0:
+                    print(f"{set_len-1} / {desired_len}")
 
                 in_tensor, move_target, val_target, depth = self.reformat(line)
 
@@ -410,15 +423,15 @@ class TrainingSetProcessor:
 
 if __name__ == "__main__":
     in_path = "src/chess2/bot/data/lichess_filtered.jsonl"
-    out_path_training = "src/chess2/bot/data/training_data.h5"
-    out_path_validation = "src/chess2/bot/data/validation_data.h5"
-    out_path_testing = "src/chess2/bot/data/testing_data.h5"
+    out_path_training = "src/chess2/bot/data/training_data_2.h5"
+    out_path_validation = "src/chess2/bot/data/validation_data-2.h5"
+    out_path_testing = "src/chess2/bot/data/testing_data_2.h5"
     processor = TrainingSetProcessor()
 
 
-    # processor.jsonl_to_h5_stream(in_path, out_path_training, 2_000_000, start_line=0)
-    # processor.jsonl_to_h5_stream(in_path, out_path_validation, 50_000, start_line=2_000_000)
-    # processor.jsonl_to_h5_stream(in_path, out_path_testing, 200_000, start_line=2_200_000)
+    # processor.jsonl_to_h5_stream(in_path, out_path_training, 10000, start_line=0) # 2_000_000
+    # processor.jsonl_to_h5_stream(in_path, out_path_validation, 5000, start_line=2_000_000) # 50_000
+    # processor.jsonl_to_h5_stream(in_path, out_path_testing, 2000, start_line=2_200_000) # 200_000
 
 
     # with h5py.File(out_path_testing, "r") as file:
@@ -431,8 +444,15 @@ if __name__ == "__main__":
     #     print(count)
     
 
-    with h5py.File(out_path_training, "r") as file:
-        move_vec = file["move_target"][142002]
-        print(processor.decode_policy_vector(move_vec))
-        print(file["depth"][0])
-        print(file["move_target"].shape)
+    # with h5py.File(out_path_training, "r") as file, open(in_path, "r") as jsonfile:
+    #     for idx, line in enumerate(jsonfile):
+    #         if idx > 1000:
+    #             break
+    #         move_vec = file["move_target"][idx]
+    #         side_to_move = "w" if file["input"][idx, 12, 0, 0] == 1 else "b"
+    #         predicted_move = processor.decode_policy_vector(move_vec, side_to_move)
+    #         real_move = json.loads(line)["best_move"]
+    #         print(real_move == predicted_move, f"        move: {real_move}   pred: {predicted_move}")
+
+
+        # print(np.argmax(move_vec))
