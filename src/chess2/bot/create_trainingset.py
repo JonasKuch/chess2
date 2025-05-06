@@ -322,6 +322,7 @@ class TrainingSetProcessor:
         vector = np.zeros(4672, dtype=np.int8)
         board = chess.Board(fen)
         side_to_move = fen.split()[1]
+        # side_to_move = "w" if board.turn else "b"
 
         for move in board.legal_moves:
             uci = move.uci()
@@ -343,17 +344,19 @@ class TrainingSetProcessor:
         move_target = self.best_move_one_hot(best_move, side_to_move)
         val_target = np.float32(val)
         depth = np.float32(depth)
+        moves_mask = self.legal_moves_mask(fen)
 
-        return in_tensor, move_target, val_target, depth
+        return in_tensor, move_target, val_target, depth, moves_mask
 
 
-    def append_block(self, file, in_tensor_block, move_target_block, val_target_block, depth_block):
+    def append_block(self, file, in_tensor_block, move_target_block, val_target_block, depth_block, moves_mask_block):
 
         for name, block in [
             ("input", in_tensor_block),
             ("move_target", move_target_block),
             ("val_target", val_target_block),
-            ("depth", depth_block)
+            ("depth", depth_block),
+            ("moves_mask", moves_mask_block)
         ]:
             dataset = file[name]
             old_len = dataset.shape[0]
@@ -372,8 +375,10 @@ class TrainingSetProcessor:
             out_file.create_dataset("move_target", (0, 4672), dtype=np.int8, maxshape = (None, 4672), chunks = (chunk_size, 4672), compression="gzip")
             out_file.create_dataset("val_target", (0, ), dtype = np.float32, maxshape=(None, ), chunks=(chunk_size, ), compression="gzip")
             out_file.create_dataset("depth", (0, ), dtype=np.int8, maxshape=(None, ), chunks=(chunk_size, ), compression="gzip")
+            out_file.create_dataset("moves_mask", (0, 4672), dtype=np.int8, maxshape = (None, 4672), chunks = (chunk_size, 4672), compression="gzip")
 
-            in_tensor_list, move_target_list, val_target_list, depth_list = [], [], [], []
+
+            in_tensor_list, move_target_list, val_target_list, depth_list, moves_mask_list = [], [], [], [], []
             line_num = 0
             set_len = 0
 
@@ -387,12 +392,13 @@ class TrainingSetProcessor:
                 if (set_len-1)%10000 == 0:
                     print(f"{set_len-1} / {desired_len}")
 
-                in_tensor, move_target, val_target, depth = self.reformat(line)
+                in_tensor, move_target, val_target, depth, moves_mask = self.reformat(line)
 
                 in_tensor_list.append(in_tensor)
                 move_target_list.append(move_target)
                 val_target_list.append(val_target)
                 depth_list.append(depth)
+                moves_mask_list.append(moves_mask)
 
                 if len(in_tensor_list) >= chunk_size:
                     self.append_block(
@@ -400,12 +406,14 @@ class TrainingSetProcessor:
                         np.asarray(in_tensor_list,    dtype=np.float32),
                         np.asarray(move_target_list,  dtype=np.int8),
                         np.asarray(val_target_list,   dtype=np.float32),
-                        np.asarray(depth_list,        dtype=np.int16)
+                        np.asarray(depth_list,        dtype=np.int16),
+                        np.asarray(moves_mask_list,  dtype=np.int8)
                     )
                     in_tensor_list.clear()
                     move_target_list.clear()
                     val_target_list.clear()
                     depth_list.clear()
+                    moves_mask_list.clear()
                 
             if in_tensor_list:
                 self.append_block(
@@ -413,12 +421,15 @@ class TrainingSetProcessor:
                     np.asarray(in_tensor_list,    dtype=np.float32),
                     np.asarray(move_target_list,  dtype=np.int8),
                     np.asarray(val_target_list,   dtype=np.float32),
-                    np.asarray(depth_list,        dtype=np.int16)
+                    np.asarray(depth_list,        dtype=np.int16),
+                    np.asarray(moves_mask_list,  dtype=np.int8)
                 )
                 in_tensor_list.clear()
                 move_target_list.clear()
                 val_target_list.clear()
                 depth_list.clear()
+                moves_mask_list.clear()
+
 
 
 if __name__ == "__main__":
@@ -467,3 +478,15 @@ if __name__ == "__main__":
     #     print(predicted_move)
     #     for i in range(18):
     #         print(file["input"][idx, i])
+
+
+
+    with h5py.File("src/chess2/bot/data/training_data.h5", "r") as file:
+        for idx in range(1000):
+            move_mask = file["moves_mask"][idx]
+            move_pred = file["move_target"][idx]
+            side_to_move = "w" if file["input"][idx, 12, 0, 0] == 1 else "b"
+
+            masked = move_mask*move_pred
+            
+            print(processor.decode_policy_vector(masked, side_to_move))
