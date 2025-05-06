@@ -11,7 +11,7 @@ from chess2.bot import NeuralNetwork
 # Hyperparameters
 BATCH_SIZE = 64
 EPOCHS = 10 #150
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 1e-3 #1e-4 was good
 WEIGHT_DECAY = 1e-4
 NUM_WORKERS = 5
 
@@ -85,7 +85,6 @@ def train_loop(dataloader, model, loss_policy, loss_val, optimizer, scheduler):
         loss.backward()
         clip_grad_norm_(model.parameters(), max_norm=1)
         optimizer.step()
-        scheduler.step()
 
         if batch % 100 == 0:
             loss, current = loss.item(), batch * BATCH_SIZE
@@ -136,5 +135,8 @@ if __name__ == "__main__":
     for t in range(EPOCHS):
         print(f"Epoch {t+1}\n-------------------------------")
         train_loop(test_dataloader, model, loss_policy, loss_val, optimizer, scheduler) # train_dataloader instead of test_dataloader
+        scheduler.step()
         validation_loop(validation_dataloader, model, loss_policy, loss_val)
     print("Done!")
+
+    torch.save(model.state_dict(), 'src/chess2/bot/saved_models/model_64_30_1e-3_1e-4.pth')
