@@ -19,3 +19,5 @@ __pycache__/
 
 # Training Data
 data/
+
+saved_models
