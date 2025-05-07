@@ -21,7 +21,7 @@ class Game():
         self.move = Move()
         self.start_screen = StartScreen(self.gui.window)
         self.end_screen = EndScreen(self.gui.window, self.start_screen)
-        self.bot = MoveGenerator()
+        self.bot = MoveGenerator("src/chess2/bot/saved_models/model_64_30_1e-3_1e-4_23.pth")
         self.in_gui = in_gui
         self.action = None
         self.with_takeback = with_takeback
@@ -186,7 +186,8 @@ class Game():
 
             bot_side = Color.BLACK if side == Color.WHITE else Color.WHITE
             if play_bot and self.board.turn == bot_side and self.running:
-                self.board.load_state(self.bot.stockfish_move(bot_side, self.board))
+                # self.board.load_state(self.bot.stockfish_move(bot_side, self.board))
+                self.board.load_state(self.bot.model_move(bot_side, self.board))
                 self.swap_turns(turn_board)
                 self.move.cache_board_state(self.board)
                 self.check_for_end()
