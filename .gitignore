@@ -19,6 +19,7 @@ __pycache__/
 
 # Training Data
 data/
+data_leela/
 
 # Trained params
 saved_models/
