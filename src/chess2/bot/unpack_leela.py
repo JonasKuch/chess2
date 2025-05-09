@@ -395,6 +395,13 @@ if __name__ == '__main__':
     chunkparser:
     https://github.com/LeelaChessZero/lczero-training/blob/master/tf/chunkparser.py
 
-    
+    v3 encoder or decoder (dont know right now):
+    https://github.com/LeelaChessZero/lc0/blob/bf5a8d7c56d0b467957d9e850db7321f11950dc4/src/neural/writer.h
+
+    data format explanations:
+    https://lczero.org/dev/wiki/training-data-format-versions/
+
+
+    chat gpt chat name: Read tar.bz2 in Python @ jonas.a.kuch
 
 '''
