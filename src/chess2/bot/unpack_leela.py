@@ -365,6 +365,7 @@ if __name__ == '__main__':
         full_board = np.zeros((8, 8))
         for board in first['planes'][:12]:
             full_board += bitboard_to_matrix(board)
+            print(bitboard_to_matrix(board))
         
         print(full_board)
 
@@ -376,6 +377,28 @@ if __name__ == '__main__':
         prob = first["probabilities"]
         print(new_rev_white_move_map[np.argmax(prob)] if first['side_to_move'] == 0 else new_rev_black_move_map[np.argmax(prob)])
 
+    # with tarfile.open(path, 'r:bz2') as tar:
+    #     target = 200000
+    #     count = 0
+    #     old_count = 0
+    #     for i, member in enumerate(tar):
+    #         if not member.isfile() or not member.name.endswith('.gz'):
+    #             continue
+    #         # print("Parsing:", member.name)
+    #         gz_stream = tar.extractfile(member)
+    #         if gz_stream is None:
+    #             continue
+    #         # parse this .gz chunk
+    #         for record in parse_v3_gzip_stream(gz_stream):
+    #             count += 1
+            
+    #         if count//1000 > old_count:
+    #             print(count)
+    #         old_count = count // 1000
+
+    #         if count >= target:
+    #             print(count)
+    #             break
     
 
     # # count how many records in the entire archive (just as a check)
