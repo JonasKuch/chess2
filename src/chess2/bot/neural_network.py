@@ -1,20 +1,18 @@
 from torch import nn
+import torch 
 
 
 '''
-Input: 8×8×18
+Input: 8×8×12
 → Conv3×3, 64 filters, stride 1, BN, ReLU
-→ [ Residual block  × 4 ]    ← very small!
+→ [ Residual block  × 4 ]
      ├ Conv3×3, 64 filters, BN, ReLU
      ├ Conv3×3, 64 filters, BN
      └ Add → ReLU
 → Policy head:
      ├ Conv1×1, 73 filters, BN, ReLU
-     └ Flatten → Softmax(4672)
-→ Value head:
-     ├ Conv1×1, 1 filter, BN, ReLU
-     ├ FC 128, ReLU
-     └ FC 1, tanh → v
+     ├ Flatten + Flags
+     └ FC (1024, 1858) → Softmax(1858)
 '''
 
 
@@ -69,7 +67,7 @@ class NeuralNetwork(nn.Module):
         # Initial Convolition of the Input Tensors
         self.initial_conv_block = nn.Sequential(
             nn.Conv2d(
-                in_channels=18,
+                in_channels=12,
                 out_channels=64,
                 kernel_size=3,
                 stride=1,
@@ -108,37 +106,18 @@ class NeuralNetwork(nn.Module):
             nn.Flatten()
         )
 
-
-        # Value Head
-        self.value_head = nn.Sequential(
-            nn.Conv2d(
-                in_channels=64,
-                out_channels=1,
-                kernel_size=1,
-                stride=1,
-                bias=False
-            ),
-            nn.BatchNorm2d(
-                num_features=1
-            ),
+        self.fc_layers = nn.Sequential(
+            nn.Linear(4677, 1024),
             nn.ReLU(inplace=True),
-            nn.Flatten(),
-            nn.Linear(
-                in_features=64,
-                out_features=128
-            ),
-            nn.Linear(
-                in_features=128,
-                out_features=1
-            ),
-            nn.Tanh()
+            nn.Linear(1024, 1858)
         )
 
+    def forward(self, board, flags):
+        out = self.initial_conv_block(board)
+        out = self.residual_layers(out)
+        out = self.policy_head(out)
+        out = torch.cat([out, flags], dim=1)
+        out = self.fc_layers(out)
+        return out
 
-    def forward(self, x):
-        x = self.initial_conv_block(x)
-        x = self.residual_layers(x)
-        out1 = self.policy_head(x)
-        out2 = self.value_head(x)
-        return out1, out2
 

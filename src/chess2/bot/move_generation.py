@@ -113,9 +113,10 @@ class MoveGenerator():
 
         with torch.no_grad():
             mask = torch.from_numpy(self.processor.legal_moves_mask(fen))
-            in_tensor = torch.from_numpy(np.array([self.processor.fen_to_tensor(fen)[0]]))
+            in_tensor = torch.from_numpy(self.processor.fen_to_tensor(fen)[0])
+            flags = torch.from_numpy(self.processor.fen_to_tensor(fen)[1])
 
-            move_pred, val_pred = self.model(in_tensor)
+            move_pred = self.model(in_tensor, flags)
             move_pred_masked = move_pred.masked_fill(~mask.bool(), -1e9)
             moves_prob = torch.softmax(move_pred_masked, dim=1, dtype=torch.float32)
             move_uci = self.processor.decode_policy_vector(moves_prob, side_to_move=side)
@@ -148,9 +149,6 @@ class MoveGenerator():
         board.update_grid()
         board.update_checks()
         return board
-
-
-
 
 
     def make_random_move(self, side, board):

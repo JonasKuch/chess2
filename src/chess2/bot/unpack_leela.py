@@ -1,3 +1,4 @@
+import joblib
 import tarfile
 import gzip
 import io
@@ -262,7 +263,7 @@ def parse_v3_gzip_stream(gzip_stream):
     """
     Given a file-like object `gzip_stream` (raw bytes of a .gz file),
     decompress and yield one V3 record at a time as a tuple:
-      (version:int,
+      (version: int,
        probabilities: np.ndarray shape (1858,),
        planes:        np.ndarray shape (104,), dtype=np.uint64,
        castling:      dict,
@@ -281,11 +282,11 @@ def parse_v3_gzip_stream(gzip_stream):
             # unpack into flat tuple
             data = V3_STRUCT.unpack(chunk)
             version = data[0]
-            probs = np.array(data[1:1+1858], dtype=np.float32)
+            probs = np.array(data[1:1+1858], dtype=np.int8)
             planes = np.array(data[1+1858:1+1858+104], dtype=np.uint64)
-            off = 1+1858+104
-            cast_us_ooo, cast_us_oo, cast_th_ooo, cast_th_oo, side, rule50, mv_cnt = data[off:off+7]
-            result = data[off+7]
+            flags = 1+1858+104
+            cast_us_ooo, cast_us_oo, cast_th_ooo, cast_th_oo, side, rule50, mv_cnt = data[flags:flags+7]
+            result = data[flags+7]
             yield {
                 'version': version,
                 'probabilities': probs,
@@ -339,9 +340,8 @@ def bitboard_to_matrix(bb):
 # 4) Example usage: count total records and inspect first one
 # -----------------------------------------------------------------------------
 if __name__ == '__main__':
-    import itertools
 
-    path = 'src/chess2/bot/data_leela/ccrl-v3.tar.bz2'   # adjust to your actual path
+    path = 'src/chess2/bot/data_leela/ccrl-v3.tar.bz2'
 
     gen = iterate_ccrl_v3(path)
     for i in range(3):
@@ -363,19 +363,55 @@ if __name__ == '__main__':
         print("\n")
 
         full_board = np.zeros((8, 8))
-        for board in first['planes'][:12]:
+        planes = first["planes"][:12]
+        if first["side_to_move"] == 1:
+          planes[4], planes[5] = planes[5], planes[4]
+          planes[10], planes[11] = planes[11], planes[10]
+        for board in planes:
             full_board += bitboard_to_matrix(board)
             print(bitboard_to_matrix(board))
         
         print(full_board)
 
-        if i == 12:
-            for idx, board in enumerate(first['planes']):
-                
-                print(bitboard_to_matrix(board), idx)
-
         prob = first["probabilities"]
         print(new_rev_white_move_map[np.argmax(prob)] if first['side_to_move'] == 0 else new_rev_black_move_map[np.argmax(prob)])
+        print(np.argmax(prob))
+
+
+#########################################
+
+    # path = 'src/chess2/bot/data_leela/ccrl-v3.tar.bz2'
+    # data_list = []
+    # gen = iterate_ccrl_v3(path)
+
+    # for i in range(1_000_000):
+    #     record = next(gen)
+        
+    #     # planes als float32 Array
+    #     planes = record["planes"][:12]
+    #     if record["side_to_move"] == 1:
+    #       planes[4], planes[5] = planes[5], planes[4]
+    #       planes[10], planes[11] = planes[11], planes[10]
+        
+    #     # flags / side_to_move als int Array
+    #     flags = np.array([
+    #         record["castling_us_ooo"],
+    #         record["castling_us_oo"],
+    #         record["castling_them_ooo"],
+    #         record["castling_them_oo"],
+    #         record["side_to_move"]
+    #     ], dtype=np.int8)
+        
+    #     # label: move index
+    #     label = np.argmax(record["probabilities"])
+        
+    #     # Eintrag als Tuple (planes, flags, label)
+    #     data_list.append((planes, flags, label))
+
+    # joblib.dump(data_list, '/Users/jonas/coding/python/chess2/src/chess2/bot/data_leela/chess_data_list.pkl', compress=3)
+
+
+
 
     # with tarfile.open(path, 'r:bz2') as tar:
     #     target = 200000
@@ -402,6 +438,7 @@ if __name__ == '__main__':
     
 
     # # count how many records in the entire archive (just as a check)
+    # import itertools
     # total = sum(1 for _ in itertools.islice(iterate_ccrl_v3(path), None))
     # print("Total records in archive:", total)
 
