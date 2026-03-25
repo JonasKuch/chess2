@@ -87,7 +87,10 @@ Use the neural network bot:
 from chess2.bot.move_generation import MoveGenerator
 
 bot = MoveGenerator("path/to/model.pth")
-best_move = bot.get_best_move(board, color)
+# Move using the model
+next_board = bot.model_move(board.turn, board)
+# Or use Stockfish as a reference engine
+next_board_sf = bot.stockfish_move(board.turn, board)
 ```
 
 ### Data Processing
@@ -187,7 +190,7 @@ The `bot/` directory contains the machine learning components:
 
 - **`neural_network.py`**: Implements a convolutional neural network architecture inspired by AlphaZero, featuring residual blocks for position evaluation.
 
-- **`move_generation.py`**: Uses the trained neural network to evaluate positions and select optimal moves. Integrates with Stockfish for enhanced analysis.
+- **`move_generation.py`**: Implements policy-driven move selection, including methods for model move (`model_move`), Stockfish move (`stockfish_move`), and all-legal-board generation (`get_all_possible_next_boards`). Supports pawn promotion, randomized selection, and board cloning for safe position exploration.
 
 - **`dataset.py`**: PyTorch Dataset class for loading chess training data from pre-processed pickle or HDF5 files containing bitboard representations.
 
