@@ -92,7 +92,7 @@ chess2/
 │   │   ├── move_generation.py # AI move selection logic
 │   │   ├── tensor_processor.py # Data processing utilities
 │   │   ├── dataset_filter.py # Filtering training data
-│   │   ├── training.py      # Training scripts
+│   │   ├── training.ipynb   # Training scripts
 │   │   ├── create_dataset_leela.py  # Leela Chess Zero data handling
 │   │   └── data/            # Training data and models
 │   ├── gui/                 # Graphical user interface
@@ -152,19 +152,19 @@ Located in `pieces/`, each piece type inherits from a base `Piece` class and imp
 
 The `bot/` directory contains the machine learning components:
 
-- **`neural_network.py`**: Implements a convolutional neural network architecture inspired by AlphaZero, featuring residual blocks for position evaluation.
+- **`neural_network.py`**: Implements a deep convolutional neural network architecture with residual connections and policy head
 
-- **`move_generation.py`**: Implements policy-driven move selection, including methods for model move (`model_move`), Stockfish move (`stockfish_move`), and all-legal-board generation (`get_all_possible_next_boards`). Supports pawn promotion, randomized selection, and board cloning for safe position exploration.
+- **`move_generation.py`**: Implements move selection, including methods for model move (`model_move`), Stockfish move (`stockfish_move`), and all-legal-moves generation (`get_all_possible_next_boards`) (this part uses the python-chess library). Supports pawn promotion, randomized selection, and board cloning for safe position exploration.
 
-- **`dataset.py`**: PyTorch Dataset class for loading chess training data from pre-processed pickle or HDF5 files containing bitboard representations.
+- **`dataset.py`**: PyTorch Dataset class for loading chess training data from pre-processed pickle files containing bitboard representations.
 
 - **`tensor_processor.py`**: Contains `TensorProcessor`, which converts FEN strings to neural network tensors, maps UCI moves to policy indices, decodes model output to moves, and generates legal move masks. This is used to prepare integrate the model with game state.
 
-- **`dataset_filter.py`**: Filters and processes Lichess data to create high-quality training datasets based on depth and evaluation criteria.
+- **`dataset_filter.py`**: Filters and processes Lichess data (which is currently not used) to create high-quality training datasets based on depth and evaluation criteria.
 
-- **`create_dataset_leela.py`**: Handles parsing and processing of raw Leela Chess Zero data, converting it into training datasets with appropriate formatting.
+- **`create_dataset_leela.py`**: Handles parsing and processing of raw Leela Chess Zero data, converting it into usable datasets with appropriate formatting.
 
-- **`training.py`**: Contains training loops and optimization procedures for the neural network.
+- **`training.ipynb`**: Contains training loops and optimization procedures for the neural network.
 
 ### Graphical User Interface
 
@@ -186,9 +186,9 @@ The AI system uses a deep convolutional neural network trained on millions of ch
 1. **Input Layer**: 8x8x12 board representation (12 planes for different piece types and colors)
 2. **Convolutional Layers**: Initial 3x3 convolution with 64 filters
 3. **Residual Blocks**: 4 residual blocks for deep feature extraction
-4. **Policy Head**: Predicts move probabilities (1858 possible moves)
+4. **Policy Head**: Fully connected layers; Predicts move probabilities (1858 possible moves)
 
-Training data is in Leela Chess Zero format, using bitboard representations of chess positions. Data is pre-processed into pickle or HDF5 files containing: board bitboards, position flags, and preferred move indices. The system can be trained from scratch or fine-tuned on existing models.
+Training data is in Leela Chess Zero format, using bitboard representations of chess positions. Data is pre-processed into pickle files containing: board bitboards, position flags, and preferred move indices.
 
 ## GUI Components
 
