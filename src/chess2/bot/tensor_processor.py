@@ -337,6 +337,7 @@ class TensorProcessor:
 
         for move in board.legal_moves:
             uci = move.uci()
+            if uci[-1] == "n": continue
             idx = self.uci_to_idx(uci, side_to_move)
             vector[idx] = 1
         
