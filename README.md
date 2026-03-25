@@ -20,7 +20,7 @@ A comprehensive Python implementation of a chess game featuring a graphical user
 - **Graphical User Interface**: Pygame-based GUI with intuitive board rendering and piece visualization
 - **AI Opponent**: Neural network-powered bot trained on Leela Chess Zero data for intelligent move generation
 - **Move History and Undo/Redo**: Complete move caching system with takeback functionality
-- **Game Modes**: Support for human vs human, human vs AI, and AI analysis
+- **Game Modes**: Support for human vs human and human vs AI
 - **Data Handling**: Tools for working with pre-processed chess datasets in Leela Chess Zero format with bitboard representations
 - **Extensible Architecture**: Modular design allowing easy addition of new features
 
@@ -72,12 +72,12 @@ game.play()
 
 ### Headless Game
 
-Run without GUI for testing or AI analysis:
+Run without GUI for automated testing, scripting, or engine integration:
 ```python
 from chess2.game import Game
 
 game = Game(in_gui=False)
-# Implement your own game loop or analysis
+# Use game APIs directly to simulate moves or integrate into a larger agent.
 ```
 
 ### AI Move Generation
