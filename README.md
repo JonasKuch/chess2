@@ -187,7 +187,6 @@ The AI system uses a deep convolutional neural network trained on millions of ch
 2. **Convolutional Layers**: Initial 3x3 convolution with 64 filters
 3. **Residual Blocks**: 4 residual blocks for deep feature extraction
 4. **Policy Head**: Predicts move probabilities (1858 possible moves)
-5. **Value Head**: Evaluates position quality (-1 to 1)
 
 Training data is in Leela Chess Zero format, using bitboard representations of chess positions. Data is pre-processed into pickle or HDF5 files containing: board bitboards, position flags, and preferred move indices. The system can be trained from scratch or fine-tuned on existing models.
 
