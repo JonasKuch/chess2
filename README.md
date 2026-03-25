@@ -18,10 +18,10 @@ A comprehensive Python implementation of a chess game featuring a graphical user
 
 - **Complete Chess Game Logic**: Full implementation of chess rules including piece movements, check/checkmate detection, castling, en passant, and pawn promotion
 - **Graphical User Interface**: Pygame-based GUI with intuitive board rendering and piece visualization
-- **AI Opponent**: Neural network-powered bot trained on chess positions for intelligent move generation
+- **AI Opponent**: Neural network-powered bot trained on Leela Chess Zero data for intelligent move generation
 - **Move History and Undo/Redo**: Complete move caching system with takeback functionality
 - **Game Modes**: Support for human vs human, human vs AI, and AI analysis
-- **Data Processing**: Tools for processing chess datasets (Lichess games) for training
+- **Data Handling**: Tools for working with pre-processed chess datasets in Leela Chess Zero format with bitboard representations
 - **Extensible Architecture**: Modular design allowing easy addition of new features
 
 ## Installation
@@ -92,12 +92,20 @@ best_move = bot.get_best_move(board, color)
 
 ### Data Processing
 
-Process Lichess games for training data:
+Load pre-processed chess training data:
 ```python
-from chess2.bot.create_trainingset import TrainingSetProcessor
+from chess2.bot import ChessDataset
+from torch.utils.data import DataLoader
 
-processor = TrainingSetProcessor()
-processor.process_games("lichess_db_eval.jsonl.zst")
+# Load training data from pickle or HDF5 format
+dataset = ChessDataset("path/to/data.pkl", start=0, end=1000)
+loader = DataLoader(dataset, batch_size=32, shuffle=True)
+
+for boards, flags, prob_idx in loader:
+    # boards: bitboard representation
+    # flags: additional position information
+    # prob_idx: preferred move index
+    pass
 ```
 
 ## Project Structure
@@ -181,9 +189,9 @@ The `bot/` directory contains the machine learning components:
 
 - **`move_generation.py`**: Uses the trained neural network to evaluate positions and select optimal moves. Integrates with Stockfish for enhanced analysis.
 
-- **`dataset.py`**: PyTorch Dataset class for loading and preprocessing chess training data.
+- **`dataset.py`**: PyTorch Dataset class for loading chess training data from pre-processed pickle or HDF5 files containing bitboard representations.
 
-- **`create_trainingset.py`**: Processes raw chess game data (e.g., from Lichess) into training-ready format.
+- **`create_trainingset.py`**: Utility functions for FEN to tensor conversion, UCI move indexing, and legal move mask generation. Used for position analysis and data conversion.
 
 - **`training.py`**: Contains training loops and optimization procedures for the neural network.
 
@@ -210,7 +218,7 @@ The AI system uses a deep convolutional neural network trained on millions of ch
 4. **Policy Head**: Predicts move probabilities (1858 possible moves)
 5. **Value Head**: Evaluates position quality (-1 to 1)
 
-Training data is processed from Lichess games, converting PGN format to neural network inputs. The system can be trained from scratch or fine-tuned on existing models.
+Training data is in Leela Chess Zero format, using bitboard representations of chess positions. Data is pre-processed into pickle or HDF5 files containing: board bitboards, position flags, and preferred move indices. The system can be trained from scratch or fine-tuned on existing models.
 
 ## GUI Components
 

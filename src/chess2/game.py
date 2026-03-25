@@ -15,13 +15,13 @@ import time
 
 
 class Game():
-    def __init__(self, in_gui = True, width = 700, height = 800, with_takeback = True):
+    def __init__(self, in_gui = True, width = 700, height = 800, with_takeback = True, bot_pth = "/Users/jonas/coding/python/chess2/src/chess2/bot/saved_models/model_less_data_leela.pth"):
         self.board = Board()
         self.gui = GameLoop(width, height, self.board, self.on_undo, self.on_redo, self.on_give_up)
         self.move = Move()
         self.start_screen = StartScreen(self.gui.window)
         self.end_screen = EndScreen(self.gui.window, self.start_screen)
-        self.bot = MoveGenerator("/Users/jonas/coding/python/chess2/src/chess2/bot/saved_models/model_new.pth")
+        self.bot = MoveGenerator(bot_pth)
         self.in_gui = in_gui
         self.action = None
         self.with_takeback = with_takeback
@@ -205,7 +205,7 @@ class Game():
 
 
     def play(self):
-        while True:            
+        while True:
             self.start_screen.start_screen_loop()
             self.game_loop_gui(play_bot=self.start_screen.play_bot, 
                                          turn_board=self.start_screen.flip_board, 
