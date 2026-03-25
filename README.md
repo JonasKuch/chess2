@@ -1,94 +1,211 @@
-# Schachprojekt – Codeübersicht
+# Chess2
 
-## Inhaltsverzeichnis
-- [Übersicht](#übersicht)
-- [Klassen und ihre Aufgaben](#klassen-und-ihre-aufgaben)
-  - [Color](#color)
-  - [Player](#player)
-  - [Board](#board)
-  - [Move](#move)
-  - [Piece und abgeleitete Klassen](#piece-und-abgeleitete-klassen)
-- [Spielablauf und Beispiele](#spielablauf-und-beispiele)
-- [Hinweise und mögliche Erweiterungen](#hinweise-und-mögliche-erweiterungen)
+A comprehensive chess game implementation in Python featuring a graphical user interface, AI bot with neural network evaluation, and tools for training chess models.
 
----
+## Features
 
-## Übersicht
+- **Complete Chess Logic**: Full implementation of chess rules including all piece movements, special moves (castling, en passant, pawn promotion), and game states (check, checkmate, stalemate)
+- **Graphical User Interface**: Beautiful pygame-based GUI with piece images and interactive gameplay
+- **AI Bot**: Neural network-powered chess engine trained on large datasets
+- **Training Tools**: Scripts for processing chess databases, training neural networks, and evaluating models
+- **Game Analysis**: Move validation, position evaluation, and game state tracking
 
-Dieses Projekt bildet die Grundlage für ein Schachspiel in Python. Mittels objektorientierter Programmierung werden zentrale Bausteine wie das Spielbrett, die Figuren, Spieler und Züge modelliert. Jede Figur besitzt eine Referenz auf das zugehörige Board, sodass Methoden der Figuren direkt den Zustand des Spielbretts abfragen können. Ein zentrales Element ist die Simulation von Zügen über eine Deepcopy des Boards, um zu prüfen, ob ein Zug den eigenen König gefährdet.
+## Installation
 
----
+### Prerequisites
 
-## Klassen und ihre Aufgaben
+- Python 3.8+
+- pip
 
-### Color
-- **Beschreibung:**  
-  Eine Enum-Klasse, die die beiden Spielerfarben definiert: `WHITE` und `BLACK`.
-- **Verwendung:**  
-  Dient zur Farbzuteilung von Spielern und Figuren.
+### Install Dependencies
 
-### Player
-- **Beschreibung:**  
-  Repräsentiert einen Spieler.
-- **Attribute:**  
-  - `name`: Name des Spielers.  
-  - `color`: Zugewiesene Farbe (vom Typ `Color`).
+```bash
+# Clone the repository
+git clone <repository-url>
+cd chess2
 
-### Board
-- **Beschreibung:**  
-  Repräsentiert das Schachbrett und verwaltet den Zustand des Spiels.
-- **Wichtige Attribute und Methoden:**  
-  - `grid`: Ein 8×8-Array, das die Positionen der Figuren speichert.  
-  - `pieces_on_board`: Liste aller aktiven Figuren.  
-  - `setup_pieces(color)`: Platziert Figuren der übergebenen Farbe an den festgelegten Startpositionen.  
-  - `reset_grid()` und `update_grid()`: Aktualisieren die Darstellung des Brettes, indem das Raster neu belegt wird.  
-  - `initialize()`: Führt die initiale Einrichtung des Brettes durch (Befüllen der Figuren für beide Farben und Aktualisieren des Grids).  
-  - `is_empty(square_coords)`: Prüft, ob ein bestimmtes Feld leer ist.  
-  - `in_bounds(square_coords)`: Stellt sicher, dass angegebene Koordinaten innerhalb der Brettgrenzen liegen.  
-  - `clone()`: Erstellt über `copy.deepcopy` eine Kopie des Boards, um Zugsimulationen zu ermöglichen.  
-  - `is_under_attack(color)`: (Platzhalter) Prüft, ob der König der angegebenen Farbe angegriffen wird.
+# Install the package
+pip install -e .
 
-### Move
-- **Beschreibung:**  
-  Repräsentiert einen Zug im Spiel.
-- **Attribute:**  
-  - `captured_pieces`: Liste von Figuren, die durch den Zug geschlagen wurden.  
-  - `move_history`: Historie der bisher ausgeführten Züge.
+# Install additional dependencies for GUI and AI
+pip install pygame torch h5py numpy orjson python-chess
+```
 
-### Piece und abgeleitete Klassen
-- **Basis-Klasse (Piece):**
-  - **Beschreibung:**  
-    Abstrakte Klasse, von der alle Schachfiguren erben.
-  - **Attribute:**  
-    - `_color`: Farbe der Figur.  
-    - `_position`: Aktuelle Position als Tupel (x, y).  
-    - `_has_moved`: Gibt an, ob die Figur bereits bewegt wurde (wichtig für spezielle Züge wie Rochade oder den doppelten Bauernzug).  
-    - `board`: Referenz auf das zugehörige Board.
-  - **Wichtige Methoden:**  
-    - `get_pseudo_legal_moves()`: (Abstract) Gibt alle möglichen Züge gemäß den Bewegungsregeln der Figur zurück, ohne Berücksichtigung von Schachbedingungen.  
-    - `get_legal_moves()`: Filtert die pseudo-legalen Züge, indem für jeden Zug eine Simulation (über `clone()`) durchgeführt wird, um zu prüfen, ob der eigene König damit in Schach gerät.  
-    - `move(end_position)`: Führt einen Zug aus, wenn dieser als legal erkannt wird.
-- **Spezialisierte Klassen (z. B. Pawn, Rook, Knight, Bishop, Queen, King):**
-  - Jede dieser Klassen implementiert in der Methode `get_pseudo_legal_moves()` die spezifische Zuglogik.
-  - **Beispiel – Pawn:**
-    - Berechnet Standardzüge (ein Feld vorwärts), den Doppelzug vom Startfeld, diagonale Schläge und den en passant-Zug.
-    - Verwendet das Flag `_en_passant_vulnerability` zur Kennzeichnung spezieller en passant-Situationen.
+## Usage
 
----
+### Playing the Game
 
-## Spielablauf und Beispiele
-
-Das Spiel wird über die **Board**-Klasse initialisiert. Dabei werden alle Figuren an ihre Startpositionen gesetzt und das interne Grid aktualisiert. Züge werden direkt über die Figuren-Methoden ausgeführt.
-
-### Beispiel: Erster Bauernzug
+#### GUI Mode (Recommended)
 
 ```python
-# Initialisiere das Spielbrett und setze die Figuren
+from chess2.game import Game
+
+# Start a new game with GUI
+game = Game()
+game.play()
+```
+
+This launches the graphical chess interface where you can:
+- Play against another human player
+- Play against the AI bot
+- Use takeback functionality
+- View game history
+
+#### Command Line Mode
+
+```python
+from chess2.board import Board
+from chess2 import Color
+
+# Initialize a new game
 board = Board()
 board.initialize()
 
-# Bewege den Bauern an Position (0, 1) (das Feld links vom weißen Bauern) nach (0, 2)
-board.grid[1][0].move((0, 2))
+# Make moves programmatically
+# Example: Move pawn from e2 to e4
+pawn = board.grid[1][4]  # e2 in 0-based coordinates
+pawn.move((4, 3))  # e4
 
-# Aktualisiere das Brett, um die neue Position anzuzeigen
+# Update the board display
 board.update_grid()
+```
+
+### AI Bot
+
+The project includes a trained neural network chess bot:
+
+```python
+from chess2.bot import MoveGenerator
+
+# Load a trained model
+bot = MoveGenerator("src/chess2/bot/saved_models/model_new.pth")
+
+# Get the best move for the current position
+best_move = bot.get_best_move(board, Color.WHITE)
+```
+
+## Project Structure
+
+```
+chess2/
+├── src/chess2/
+│   ├── __init__.py          # Package initialization
+│   ├── board.py             # Chess board representation and logic
+│   ├── enums.py             # Color, PieceType, Action enums
+│   ├── game.py              # Main game loop and GUI integration
+│   ├── move.py              # Move representation and history
+│   ├── players.py           # Player classes
+│   ├── pieces/              # Chess piece implementations
+│   │   ├── base.py          # Abstract piece base class
+│   │   ├── pawn.py          # Pawn movement logic
+│   │   ├── rook.py          # Rook movement logic
+│   │   ├── knight.py        # Knight movement logic
+│   │   ├── bishop.py        # Bishop movement logic
+│   │   ├── queen.py         # Queen movement logic
+│   │   └── king.py          # King movement logic
+│   ├── gui/                 # Graphical user interface
+│   │   ├── gui.py           # Main GUI loop
+│   │   ├── window.py        # Window management
+│   │   ├── board_renderer.py # Board drawing
+│   │   ├── pieces_renderer.py # Piece rendering
+│   │   ├── button.py        # UI buttons
+│   │   ├── event_handler.py # Input handling
+│   │   ├── start_screen.py  # Game start screen
+│   │   └── end_screen.py    # Game end screen
+│   └── bot/                 # AI and training components
+│       ├── __init__.py
+│       ├── neural_network.py # PyTorch neural network model
+│       ├── move_generation.py # AI move generation
+│       ├── dataset.py       # Training data handling
+│       ├── training.py      # Model training script
+│       ├── create_trainingset.py # Dataset creation from PGN
+│       ├── dataset_filter.py # Data filtering utilities
+│       ├── unpack_leela.py  # Leela Chess Zero data processing
+│       └── data/            # Training datasets
+├── examples/                # Usage examples
+├── tests/                   # Unit tests
+└── pyproject.toml           # Project configuration
+```
+
+## Training the AI
+
+### Data Preparation
+
+The bot uses chess games from Lichess database for training:
+
+```bash
+# Process raw game data
+python -m chess2.bot.create_trainingset
+
+# Filter and prepare training data
+python -m chess2.bot.dataset_filter
+```
+
+### Training the Model
+
+```python
+# Run training script
+python src/chess2/bot/training.py
+```
+
+The training process includes:
+- Policy head for move prediction
+- Value head for position evaluation
+- Self-play data augmentation
+- Validation and testing
+
+### Model Evaluation
+
+Evaluate trained models on test datasets:
+
+```python
+from chess2.bot import ChessDataset
+import torch
+
+# Load test data
+test_data = ChessDataset("src/chess2/bot/data/testing_data.h5")
+
+# Load model and evaluate
+model = torch.load("saved_models/model_new.pth")
+# ... evaluation code
+```
+
+## Development
+
+### Running Tests
+
+```bash
+python -m pytest tests/
+```
+
+### Code Style
+
+The project follows standard Python conventions. Use type hints and docstrings for new code.
+
+### Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## Dependencies
+
+- **pygame**: GUI framework
+- **torch**: Neural network framework
+- **h5py**: HDF5 file handling for datasets
+- **numpy**: Numerical computations
+- **orjson**: Fast JSON processing
+- **python-chess**: Chess move validation and PGN handling
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- Chess piece images and GUI assets
+- Lichess database for training data
+- PyTorch community for neural network tools
+- Python-chess library for chess utilities

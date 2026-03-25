@@ -45,7 +45,7 @@ class ChessDataset(Dataset):
     def bitboard_to_matrix(self, bb):
         """
         bb: a Python integer 0 <= bb < 2**64
-        returns: 8×8 numpy array, row‑major with row 0 = rank 1, col 0 = file a
+        returns: 8×8 numpy array, row-major with row 0 = rank 1, col 0 = file a
         """
         bits = np.unpackbits(
             np.array([bb], dtype=np.uint64).view(np.uint8)
