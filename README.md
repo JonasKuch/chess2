@@ -5,14 +5,11 @@ A comprehensive Python implementation of a chess game featuring a graphical user
 ## Table of Contents
 
 - [Features](#features)
-- [Installation](#installation)
 - [Usage](#usage)
 - [Project Structure](#project-structure)
 - [Modules Overview](#modules-overview)
 - [AI and Neural Network](#ai-and-neural-network)
 - [GUI Components](#gui-components)
-- [Contributing](#contributing)
-- [License](#license)
 
 ## Features
 
