@@ -194,6 +194,29 @@ class Game():
 
             self.gui.tick(60)
 
+    def game_loop_gui_bot_vs_bot(self, sf_side, timeout=0):
+        self.start_game()
+        self.move.cache_board_state(self.board)
+
+        while self.running:
+            self.board.load_state(self.bot.stockfish_move(Color.WHITE, self.board)) if sf_side is Color.WHITE else self.board.load_state(self.bot.model_move(Color.WHITE, self.board))
+            self.swap_turns(False)
+            self.move.cache_board_state(self.board)
+            self.gui.draw_all_game(Color.WHITE)
+            self.gui.update_window()
+            time.sleep(timeout)
+            self.check_for_end()
+            self.gui.tick(60)
+
+            self.board.load_state(self.bot.stockfish_move(Color.BLACK, self.board)) if sf_side is Color.BLACK else self.board.load_state(self.bot.model_move(Color.BLACK, self.board))
+            self.swap_turns(False)
+            self.move.cache_board_state(self.board)
+            self.gui.draw_all_game(Color.WHITE)
+            self.gui.update_window()
+            time.sleep(timeout)
+            self.check_for_end()
+            self.gui.tick(60)
+
 
     def reset_all_properties(self):
         self.board.__init__()
@@ -212,5 +235,18 @@ class Game():
                                          show_legal_moves=self.start_screen.show_moves,
                                          side=self.start_screen.chosen_color,
                                          with_takeback=self.start_screen.with_takeback)
+            self.end_screen.end_screen_loop(self.message, self.board)
+            self.reset_all_properties()
+
+    def play_bot_vs_bot(self, sf_side, timeout=0):
+        if sf_side == "white": 
+            sf_side = Color.WHITE
+        elif sf_side == "black":
+            sf_side = Color.BLACK
+        else:
+            print("sf_side must be white or black as str input")
+
+        while True:
+            self.game_loop_gui_bot_vs_bot(sf_side=sf_side, timeout=timeout)
             self.end_screen.end_screen_loop(self.message, self.board)
             self.reset_all_properties()

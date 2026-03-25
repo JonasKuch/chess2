@@ -24,40 +24,6 @@ A comprehensive Python implementation of a chess game featuring a graphical user
 - **Data Handling**: Tools for working with pre-processed chess datasets in Leela Chess Zero format with bitboard representations
 - **Extensible Architecture**: Modular design allowing easy addition of new features
 
-## Installation
-
-### Prerequisites
-
-- Python 3.8+
-- PyTorch (for neural network functionality)
-- Pygame (for GUI)
-- Stockfish (optional, for enhanced AI analysis)
-
-### Setup
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd chess2
-```
-
-2. Create a virtual environment:
-```bash
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-```
-
-3. Install dependencies:
-```bash
-pip install -e .
-```
-
-4. (Optional) Install additional dependencies for AI training:
-```bash
-pip install torch torchvision torchaudio
-pip install stockfish  # For enhanced AI analysis
-```
-
 ## Usage
 
 ### Basic Game
@@ -127,9 +93,10 @@ chess2/
 │   │   ├── dataset.py       # PyTorch dataset for training
 │   │   ├── neural_network.py # Neural network architecture
 │   │   ├── move_generation.py # AI move selection logic
-│   │   ├── create_trainingset.py # Data processing utilities
+│   │   ├── tensor_processor.py # Data processing utilities
+│   │   ├── dataset_filter.py # Filtering training data
 │   │   ├── training.py      # Training scripts
-│   │   ├── unpack_leela.py  # Leela Chess Zero data handling
+│   │   ├── create_dataset_leela.py  # Leela Chess Zero data handling
 │   │   └── data/            # Training data and models
 │   ├── gui/                 # Graphical user interface
 │   │   ├── __init__.py
@@ -194,7 +161,11 @@ The `bot/` directory contains the machine learning components:
 
 - **`dataset.py`**: PyTorch Dataset class for loading chess training data from pre-processed pickle or HDF5 files containing bitboard representations.
 
-- **`create_trainingset.py`**: Contains `TrainingSetProcessor`, which converts FEN strings to neural network tensors, maps UCI moves to policy indices, decodes model output to moves, and generates legal move masks. This is used to prepare game positions for training/evaluation and to integrate the model with game state.
+- **`tensor_processor.py`**: Contains `TensorProcessor`, which converts FEN strings to neural network tensors, maps UCI moves to policy indices, decodes model output to moves, and generates legal move masks. This is used to prepare integrate the model with game state.
+
+- **`dataset_filter.py`**: Filters and processes Lichess data to create high-quality training datasets based on depth and evaluation criteria.
+
+- **`create_dataset_leela.py`**: Handles parsing and processing of raw Leela Chess Zero data, converting it into training datasets with appropriate formatting.
 
 - **`training.py`**: Contains training loops and optimization procedures for the neural network.
 
@@ -227,32 +198,6 @@ Training data is in Leela Chess Zero format, using bitboard representations of c
 
 The GUI provides an intuitive chess experience with:
 
-- **Visual Board**: Clear 8x8 grid with coordinate labels
-- **Piece Sprites**: High-quality piece images with smooth movement
-- **Interactive Controls**: Click-to-move interface with piece highlighting
-- **Game Information**: Move history, captured pieces, and game status
+- **Visual Board**: Clear 8x8 grid and piece images 
+- **Interactive Controls**: Click-to-move interface with piece highlighting and legal moves indication
 - **Menu System**: Start screen for game configuration, end screen for results
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Make your changes and add tests
-4. Run existing tests: `python -m pytest tests/`
-5. Commit your changes: `git commit -am 'Add feature'`
-6. Push to the branch: `git push origin feature-name`
-7. Submit a pull request
-
-### Development Setup
-
-For development with additional tools:
-
-```bash
-pip install -e ".[dev]"
-# Install pre-commit hooks
-pre-commit install
-```
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.

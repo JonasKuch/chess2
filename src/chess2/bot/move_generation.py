@@ -6,7 +6,8 @@ import copy
 from stockfish import Stockfish
 import torch
 from chess2.bot import NeuralNetwork, TensorProcessor
-stockfish = Stockfish(path="/opt/homebrew/bin/stockfish", depth=20)
+stockfish = Stockfish(path="/opt/homebrew/bin/stockfish")
+stockfish.set_elo_rating(100)
 
 
 
