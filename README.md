@@ -194,7 +194,7 @@ The `bot/` directory contains the machine learning components:
 
 - **`dataset.py`**: PyTorch Dataset class for loading chess training data from pre-processed pickle or HDF5 files containing bitboard representations.
 
-- **`create_trainingset.py`**: Utility functions for FEN to tensor conversion, UCI move indexing, and legal move mask generation. Used for position analysis and data conversion.
+- **`create_trainingset.py`**: Contains `TrainingSetProcessor`, which converts FEN strings to neural network tensors, maps UCI moves to policy indices, decodes model output to moves, and generates legal move masks. This is used to prepare game positions for training/evaluation and to integrate the model with game state.
 
 - **`training.py`**: Contains training loops and optimization procedures for the neural network.
 

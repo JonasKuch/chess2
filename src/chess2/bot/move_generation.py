@@ -5,7 +5,7 @@ import numpy as np
 import copy
 from stockfish import Stockfish
 import torch
-from chess2.bot import NeuralNetwork, TrainingSetProcessor
+from chess2.bot import NeuralNetwork, TensorProcessor
 stockfish = Stockfish(path="/opt/homebrew/bin/stockfish", depth=20)
 
 
@@ -15,7 +15,7 @@ class MoveGenerator():
         self.model = NeuralNetwork().to("cpu")
         self.model.load_state_dict(torch.load(model_params_path, weights_only=True))
         self.model.eval()
-        self.processor = TrainingSetProcessor()
+        self.processor = TensorProcessor()
 
 
     def pawn_promotion(self, piece, board, move):
