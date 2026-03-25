@@ -1,87 +1,103 @@
 # Chess2
 
-A comprehensive chess game implementation in Python featuring a graphical user interface, AI bot with neural network evaluation, and tools for training chess models.
+A comprehensive Python implementation of a chess game featuring a graphical user interface, AI-powered move generation using neural networks, and support for various game modes.
+
+## Table of Contents
+
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Project Structure](#project-structure)
+- [Modules Overview](#modules-overview)
+- [AI and Neural Network](#ai-and-neural-network)
+- [GUI Components](#gui-components)
+- [Contributing](#contributing)
+- [License](#license)
 
 ## Features
 
-- **Complete Chess Logic**: Full implementation of chess rules including all piece movements, special moves (castling, en passant, pawn promotion), and game states (check, checkmate, stalemate)
-- **Graphical User Interface**: Beautiful pygame-based GUI with piece images and interactive gameplay
-- **AI Bot**: Neural network-powered chess engine trained on large datasets
-- **Training Tools**: Scripts for processing chess databases, training neural networks, and evaluating models
-- **Game Analysis**: Move validation, position evaluation, and game state tracking
+- **Complete Chess Game Logic**: Full implementation of chess rules including piece movements, check/checkmate detection, castling, en passant, and pawn promotion
+- **Graphical User Interface**: Pygame-based GUI with intuitive board rendering and piece visualization
+- **AI Opponent**: Neural network-powered bot trained on chess positions for intelligent move generation
+- **Move History and Undo/Redo**: Complete move caching system with takeback functionality
+- **Game Modes**: Support for human vs human, human vs AI, and AI analysis
+- **Data Processing**: Tools for processing chess datasets (Lichess games) for training
+- **Extensible Architecture**: Modular design allowing easy addition of new features
 
 ## Installation
 
 ### Prerequisites
 
 - Python 3.8+
-- pip
+- PyTorch (for neural network functionality)
+- Pygame (for GUI)
+- Stockfish (optional, for enhanced AI analysis)
 
-### Install Dependencies
+### Setup
 
+1. Clone the repository:
 ```bash
-# Clone the repository
 git clone <repository-url>
 cd chess2
+```
 
-# Install the package
+2. Create a virtual environment:
+```bash
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+3. Install dependencies:
+```bash
 pip install -e .
+```
 
-# Install additional dependencies for GUI and AI
-pip install pygame torch h5py numpy orjson python-chess
+4. (Optional) Install additional dependencies for AI training:
+```bash
+pip install torch torchvision torchaudio
+pip install stockfish  # For enhanced AI analysis
 ```
 
 ## Usage
 
-### Playing the Game
+### Basic Game
 
-#### GUI Mode (Recommended)
-
+Run a game with GUI:
 ```python
 from chess2.game import Game
 
-# Start a new game with GUI
 game = Game()
 game.play()
 ```
 
-This launches the graphical chess interface where you can:
-- Play against another human player
-- Play against the AI bot
-- Use takeback functionality
-- View game history
+### Headless Game
 
-#### Command Line Mode
-
+Run without GUI for testing or AI analysis:
 ```python
-from chess2.board import Board
-from chess2 import Color
+from chess2.game import Game
 
-# Initialize a new game
-board = Board()
-board.initialize()
-
-# Make moves programmatically
-# Example: Move pawn from e2 to e4
-pawn = board.grid[1][4]  # e2 in 0-based coordinates
-pawn.move((4, 3))  # e4
-
-# Update the board display
-board.update_grid()
+game = Game(in_gui=False)
+# Implement your own game loop or analysis
 ```
 
-### AI Bot
+### AI Move Generation
 
-The project includes a trained neural network chess bot:
-
+Use the neural network bot:
 ```python
-from chess2.bot import MoveGenerator
+from chess2.bot.move_generation import MoveGenerator
 
-# Load a trained model
-bot = MoveGenerator("src/chess2/bot/saved_models/model_new.pth")
+bot = MoveGenerator("path/to/model.pth")
+best_move = bot.get_best_move(board, color)
+```
 
-# Get the best move for the current position
-best_move = bot.get_best_move(board, Color.WHITE)
+### Data Processing
+
+Process Lichess games for training data:
+```python
+from chess2.bot.create_trainingset import TrainingSetProcessor
+
+processor = TrainingSetProcessor()
+processor.process_games("lichess_db_eval.jsonl.zst")
 ```
 
 ## Project Structure
@@ -89,123 +105,143 @@ best_move = bot.get_best_move(board, Color.WHITE)
 ```
 chess2/
 ├── src/chess2/
-│   ├── __init__.py          # Package initialization
-│   ├── board.py             # Chess board representation and logic
-│   ├── enums.py             # Color, PieceType, Action enums
-│   ├── game.py              # Main game loop and GUI integration
-│   ├── move.py              # Move representation and history
-│   ├── players.py           # Player classes
-│   ├── pieces/              # Chess piece implementations
-│   │   ├── base.py          # Abstract piece base class
-│   │   ├── pawn.py          # Pawn movement logic
-│   │   ├── rook.py          # Rook movement logic
-│   │   ├── knight.py        # Knight movement logic
-│   │   ├── bishop.py        # Bishop movement logic
-│   │   ├── queen.py         # Queen movement logic
-│   │   └── king.py          # King movement logic
+│   ├── __init__.py          # Main package exports
+│   ├── board.py             # Board representation and state management
+│   ├── enums.py             # Color, PieceType, and Action enumerations
+│   ├── game.py              # Main game loop and metadata
+│   ├── move.py              # Move history, undo/redo, repetition detection
+│   ├── players.py           # Player representation
+│   ├── bot/                 # AI and machine learning components
+│   │   ├── __init__.py
+│   │   ├── dataset.py       # PyTorch dataset for training
+│   │   ├── neural_network.py # Neural network architecture
+│   │   ├── move_generation.py # AI move selection logic
+│   │   ├── create_trainingset.py # Data processing utilities
+│   │   ├── training.py      # Training scripts
+│   │   ├── unpack_leela.py  # Leela Chess Zero data handling
+│   │   └── data/            # Training data and models
 │   ├── gui/                 # Graphical user interface
-│   │   ├── gui.py           # Main GUI loop
+│   │   ├── __init__.py
+│   │   ├── gui.py           # Main game loop for GUI
 │   │   ├── window.py        # Window management
-│   │   ├── board_renderer.py # Board drawing
+│   │   ├── board_renderer.py # Board visualization
 │   │   ├── pieces_renderer.py # Piece rendering
-│   │   ├── button.py        # UI buttons
 │   │   ├── event_handler.py # Input handling
-│   │   ├── start_screen.py  # Game start screen
-│   │   └── end_screen.py    # Game end screen
-│   └── bot/                 # AI and training components
+│   │   ├── button.py        # UI buttons
+│   │   ├── start_screen.py  # Game start interface
+│   │   └── end_screen.py    # Game end interface
+│   └── pieces/              # Chess piece implementations
 │       ├── __init__.py
-│       ├── neural_network.py # PyTorch neural network model
-│       ├── move_generation.py # AI move generation
-│       ├── dataset.py       # Training data handling
-│       ├── training.py      # Model training script
-│       ├── create_trainingset.py # Dataset creation from PGN
-│       ├── dataset_filter.py # Data filtering utilities
-│       ├── unpack_leela.py  # Leela Chess Zero data processing
-│       └── data/            # Training datasets
+│       ├── base.py          # Base Piece class
+│       ├── pawn.py          # Pawn-specific logic
+│       ├── rook.py          # Rook-specific logic
+│       ├── knight.py        # Knight-specific logic
+│       ├── bishop.py        # Bishop-specific logic
+│       ├── queen.py         # Queen-specific logic
+│       └── king.py          # King-specific logic
 ├── examples/                # Usage examples
-├── tests/                   # Unit tests
-└── pyproject.toml           # Project configuration
+│   └── debug_game.py        # Basic game example
+├── tests/                   # Unit tests (currently empty)
+├── chess.ipynb              # Jupyter notebook with project overview
+├── pyproject.toml           # Project configuration
+└── README.md               # This file
 ```
 
-## Training the AI
+## Modules Overview
 
-### Data Preparation
+### Core Game Logic
 
-The bot uses chess games from Lichess database for training:
+- **`board.py`**: Manages the 8x8 chess board, piece positions, and game state. Handles board initialization, piece placement, and state queries.
 
-```bash
-# Process raw game data
-python -m chess2.bot.create_trainingset
+- **`game.py`**: Orchestrates the overall game flow, including turn management, move validation, and game end conditions. Integrates GUI and AI components.
 
-# Filter and prepare training data
-python -m chess2.bot.dataset_filter
-```
+- **`move.py`**: Implements move history tracking with undo/redo functionality and threefold repetition detection for draws.
 
-### Training the Model
+- **`enums.py`**: Defines core enumerations for colors, piece types, and game actions.
 
-```python
-# Run training script
-python src/chess2/bot/training.py
-```
+- **`players.py`**: Simple player representation with name and color attributes.
 
-The training process includes:
-- Policy head for move prediction
-- Value head for position evaluation
-- Self-play data augmentation
-- Validation and testing
+### Chess Pieces
 
-### Model Evaluation
+Located in `pieces/`, each piece type inherits from a base `Piece` class and implements specific movement rules:
 
-Evaluate trained models on test datasets:
+- **Base Piece**: Common functionality for all pieces
+- **Pawn**: Handles pawn-specific moves, promotion, and en passant
+- **Rook**: Rook movement and castling logic
+- **Knight**: L-shaped knight moves
+- **Bishop**: Diagonal bishop movement
+- **Queen**: Combination of rook and bishop moves
+- **King**: King movement, castling, and check detection
 
-```python
-from chess2.bot import ChessDataset
-import torch
+### AI and Neural Network
 
-# Load test data
-test_data = ChessDataset("src/chess2/bot/data/testing_data.h5")
+The `bot/` directory contains the machine learning components:
 
-# Load model and evaluate
-model = torch.load("saved_models/model_new.pth")
-# ... evaluation code
-```
+- **`neural_network.py`**: Implements a convolutional neural network architecture inspired by AlphaZero, featuring residual blocks for position evaluation.
 
-## Development
+- **`move_generation.py`**: Uses the trained neural network to evaluate positions and select optimal moves. Integrates with Stockfish for enhanced analysis.
 
-### Running Tests
+- **`dataset.py`**: PyTorch Dataset class for loading and preprocessing chess training data.
 
-```bash
-python -m pytest tests/
-```
+- **`create_trainingset.py`**: Processes raw chess game data (e.g., from Lichess) into training-ready format.
 
-### Code Style
+- **`training.py`**: Contains training loops and optimization procedures for the neural network.
 
-The project follows standard Python conventions. Use type hints and docstrings for new code.
+### Graphical User Interface
 
-### Contributing
+The `gui/` directory provides a complete Pygame-based interface:
+
+- **`gui.py`**: Main game loop handling rendering and user interaction.
+- **`window.py`**: Window creation and management.
+- **`board_renderer.py`**: Renders the chess board grid and coordinates.
+- **`pieces_renderer.py`**: Handles piece sprite rendering and animation.
+- **`event_handler.py`**: Processes mouse and keyboard input.
+- **`button.py`**: Reusable UI button components.
+- **`start_screen.py`**: Initial game setup and menu.
+- **`end_screen.py`**: Game over screen with results and replay options.
+
+## AI and Neural Network
+
+The AI system uses a deep convolutional neural network trained on millions of chess positions. The architecture consists of:
+
+1. **Input Layer**: 8x8x12 board representation (12 planes for different piece types and colors)
+2. **Convolutional Layers**: Initial 3x3 convolution with 64 filters
+3. **Residual Blocks**: 4 residual blocks for deep feature extraction
+4. **Policy Head**: Predicts move probabilities (1858 possible moves)
+5. **Value Head**: Evaluates position quality (-1 to 1)
+
+Training data is processed from Lichess games, converting PGN format to neural network inputs. The system can be trained from scratch or fine-tuned on existing models.
+
+## GUI Components
+
+The GUI provides an intuitive chess experience with:
+
+- **Visual Board**: Clear 8x8 grid with coordinate labels
+- **Piece Sprites**: High-quality piece images with smooth movement
+- **Interactive Controls**: Click-to-move interface with piece highlighting
+- **Game Information**: Move history, captured pieces, and game status
+- **Menu System**: Start screen for game configuration, end screen for results
+
+## Contributing
 
 1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+2. Create a feature branch: `git checkout -b feature-name`
+3. Make your changes and add tests
+4. Run existing tests: `python -m pytest tests/`
+5. Commit your changes: `git commit -am 'Add feature'`
+6. Push to the branch: `git push origin feature-name`
+7. Submit a pull request
 
-## Dependencies
+### Development Setup
 
-- **pygame**: GUI framework
-- **torch**: Neural network framework
-- **h5py**: HDF5 file handling for datasets
-- **numpy**: Numerical computations
-- **orjson**: Fast JSON processing
-- **python-chess**: Chess move validation and PGN handling
+For development with additional tools:
+
+```bash
+pip install -e ".[dev]"
+# Install pre-commit hooks
+pre-commit install
+```
 
 ## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Chess piece images and GUI assets
-- Lichess database for training data
-- PyTorch community for neural network tools
-- Python-chess library for chess utilities
