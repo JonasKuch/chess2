@@ -1,6 +1,6 @@
 # Chess2
 
-A comprehensive Python implementation of a chess game featuring a graphical user interface, AI-powered move generation using neural networks, and support for various game modes.
+A comprehensive Python implementation of a chess game featuring a graphical user interface, AI-powered move generation using a neural network, and support for various game modes.
 
 ## Table of Contents
 
