@@ -187,6 +187,7 @@ class Game():
             bot_side = Color.BLACK if side == Color.WHITE else Color.WHITE
             if play_bot and self.board.turn == bot_side and self.running:
                 # self.board.load_state(self.bot.stockfish_move(bot_side, self.board))
+                # self.board.load_state(self.bot.make_random_move(bot_side, self.board))
                 self.board.load_state(self.bot.model_move(bot_side, self.board))
                 self.swap_turns(turn_board)
                 self.move.cache_board_state(self.board)
