@@ -15,13 +15,13 @@ import time
 
 
 class Game():
-    def __init__(self, in_gui = True, width = 700, height = 800, with_takeback = True, bot_pth = "/Users/jonas/coding/python/chess2/src/chess2/bot/saved_models/model_adamw_b256_e20_lr0.001_rb6_c96_best.pth"):
+    def __init__(self, in_gui = True, width = 700, height = 800, with_takeback = True, bot_pth = "/Users/jonas/coding/python/chess2/src/chess2/bot/saved_models/model_adamw_b256_e20_lr0.001_rb6_c96_best.pth", use_mcts = False, num_simulations = 200):
         self.board = Board()
         self.gui = GameLoop(width, height, self.board, self.on_undo, self.on_redo, self.on_give_up)
         self.move = Move()
         self.start_screen = StartScreen(self.gui.window)
         self.end_screen = EndScreen(self.gui.window, self.start_screen)
-        self.bot = MoveGenerator(bot_pth)
+        self.bot = MoveGenerator(bot_pth, use_mcts=use_mcts, num_simulations=num_simulations)
         self.in_gui = in_gui
         self.action = None
         self.with_takeback = with_takeback
@@ -188,7 +188,7 @@ class Game():
             if play_bot and self.board.turn == bot_side and self.running:
                 # self.board.load_state(self.bot.stockfish_move(bot_side, self.board))
                 # self.board.load_state(self.bot.make_random_move(bot_side, self.board))
-                self.board.load_state(self.bot.model_move(bot_side, self.board))
+                self.board.load_state(self.bot.bot_move(bot_side, self.board))
                 self.swap_turns(turn_board)
                 self.move.cache_board_state(self.board)
                 self.check_for_end()
@@ -200,7 +200,7 @@ class Game():
         self.move.cache_board_state(self.board)
 
         while self.running:
-            self.board.load_state(self.bot.stockfish_move(Color.WHITE, self.board)) if sf_side is Color.WHITE else self.board.load_state(self.bot.model_move(Color.WHITE, self.board))
+            self.board.load_state(self.bot.stockfish_move(Color.WHITE, self.board)) if sf_side is Color.WHITE else self.board.load_state(self.bot.bot_move(Color.WHITE, self.board))
             self.swap_turns(False)
             self.move.cache_board_state(self.board)
             self.gui.draw_all_game(Color.WHITE)
@@ -209,7 +209,7 @@ class Game():
             self.check_for_end()
             self.gui.tick(60)
 
-            self.board.load_state(self.bot.stockfish_move(Color.BLACK, self.board)) if sf_side is Color.BLACK else self.board.load_state(self.bot.model_move(Color.BLACK, self.board))
+            self.board.load_state(self.bot.stockfish_move(Color.BLACK, self.board)) if sf_side is Color.BLACK else self.board.load_state(self.bot.bot_move(Color.BLACK, self.board))
             self.swap_turns(False)
             self.move.cache_board_state(self.board)
             self.gui.draw_all_game(Color.WHITE)

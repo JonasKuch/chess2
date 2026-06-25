@@ -59,6 +59,8 @@ class NeuralNetwork(nn.Module):
         num_piece_planes=12,
         num_flags=5,
         num_moves=1858,
+        value_channels=8,
+        value_hidden=64,
     ):
         super().__init__()
         self.num_flags = num_flags
@@ -85,6 +87,19 @@ class NeuralNetwork(nn.Module):
         )
         self.fc = nn.Linear(policy_channels * 8 * 8, num_moves)
 
+        # Value head: 1×1 conv reduces channels, then FC -> scalar in [-1, 1]
+        # (win/draw/loss expectation from the side-to-move's perspective).
+        self.value_head = nn.Sequential(
+            nn.Conv2d(channels, value_channels, kernel_size=1, bias=False),
+            nn.BatchNorm2d(value_channels),
+            nn.ReLU(inplace=True),
+            nn.Flatten(),
+            nn.Linear(value_channels * 8 * 8, value_hidden),
+            nn.ReLU(inplace=True),
+            nn.Linear(value_hidden, 1),
+            nn.Tanh(),
+        )
+
     def forward(self, board, flags):
         # Broadcast each flag to a full 8×8 plane and stack onto the piece planes.
         h, w = board.shape[2], board.shape[3]
@@ -92,7 +107,8 @@ class NeuralNetwork(nn.Module):
         x = torch.cat([board, flag_planes], dim=1)
 
         x = self.initial_conv_block(x)
-        x = self.residual_layers(x)
-        x = self.policy_head(x)
-        x = self.fc(x)
-        return x
+        features = self.residual_layers(x)          # shared by both heads
+
+        policy = self.fc(self.policy_head(features))
+        value = self.value_head(features).squeeze(-1)  # (N,)
+        return policy, value

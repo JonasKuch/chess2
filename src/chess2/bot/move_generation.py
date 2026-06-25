@@ -5,14 +5,17 @@ import numpy as np
 import copy
 from stockfish import Stockfish
 import torch
+import chess
 from chess2.bot import NeuralNetwork, TensorProcessor
+from chess2.bot.mcts import MCTS
 stockfish = Stockfish(path="/opt/homebrew/bin/stockfish")
 stockfish.set_elo_rating(100)
 
 
 
 class MoveGenerator():
-    def __init__(self, model_params_path, num_residual_blocks=6, channels=96, policy_channels=16):
+    def __init__(self, model_params_path, num_residual_blocks=6, channels=96, policy_channels=16,
+                 use_mcts=False, num_simulations=200):
         # Architecture must match the checkpoint being loaded. Defaults match the
         # current trained model (model_adamw_..._rb6_c96_best.pth); pass overrides
         # if you load a checkpoint trained with a different tower/head size.
@@ -24,6 +27,14 @@ class MoveGenerator():
         self.model.load_state_dict(torch.load(model_params_path, weights_only=True))
         self.model.eval()
         self.processor = TensorProcessor()
+        self.use_mcts = use_mcts
+        self.num_simulations = num_simulations
+
+    def bot_move(self, side, board):
+        """Pick a move with PUCT MCTS if enabled, else the raw policy argmax."""
+        if self.use_mcts:
+            return self.mcts_move(side, board, num_simulations=self.num_simulations)
+        return self.model_move(side, board)
 
 
     def pawn_promotion(self, piece, board, move):
@@ -112,27 +123,15 @@ class MoveGenerator():
         return board
 
 
-    def model_move(self, side, in_board):
-        board = in_board.clone()
-        # map files → 0–7
-        file_to_i = {f:i for i,f in enumerate('abcdefgh')}
+    def apply_uci(self, board, move_uci, side):
+        """Apply a UCI move (e.g. 'e2e4', 'e7e8q') to `board` in place and return it.
 
-        fen = board.to_fen()
-
-        with torch.no_grad():
-            mask = torch.from_numpy(self.processor.legal_moves_mask(fen))
-            in_tensor = torch.from_numpy(self.processor.fen_to_tensor(fen)[0])
-            flags = torch.from_numpy(self.processor.fen_to_tensor(fen)[1])
-
-            move_pred = self.model(in_tensor, flags)
-            move_pred_masked = move_pred.masked_fill(~mask.bool(), -1e9)
-            moves_prob = torch.softmax(move_pred_masked, dim=1, dtype=torch.float32)
-            move_uci = self.processor.decode_policy_vector(moves_prob, side_to_move=side)
-
-        if move_uci is None:
-            raise RuntimeError("Stockfish returned no move")
-
-        # parse it
+        Routes everything through Piece.move so captures, the 50-move clock,
+        en-passant reset and castling-square handling all run -- including for
+        promotions (the pawn advances via move(), then is swapped for the
+        promoted piece).
+        """
+        file_to_i = {f: i for i, f in enumerate('abcdefgh')}
         from_sq, to_sq = move_uci[:2], move_uci[2:4]
         prom = move_uci[4] if len(move_uci) == 5 else None
 
@@ -140,23 +139,40 @@ class MoveGenerator():
         ex, ey = file_to_i[to_sq[0]], int(to_sq[1]) - 1
 
         piece = board.grid[sy][sx]
-        # call your move, passing promotion if any
+        piece.move((ex, ey))
+
         if prom:
-            # if your Pawn.move API takes a promotion arg:
-            piece._captured = True
-            # Create the promoted piece
-            promotion_map = {
-                'q': Queen, 'r': Rook, 'b': Bishop, 'n': Knight
-            }
-            cls = promotion_map[prom.lower()]
-            new_piece = cls(side, (ex, ey), board)
+            promotion_map = {'q': Queen, 'r': Rook, 'b': Bishop, 'n': Knight}
+            piece._captured = True   # remove the pawn that just advanced
+            new_piece = promotion_map[prom.lower()](side, (ex, ey), board)
             board.pieces_on_board.append(new_piece)
-        else:
-            piece.move((ex, ey))
 
         board.update_grid()
         board.update_checks()
         return board
+
+    def model_move(self, side, in_board):
+        board = in_board.clone()
+        fen = board.to_fen()
+
+        with torch.no_grad():
+            mask = torch.from_numpy(self.processor.legal_moves_mask(fen))
+            in_tensor = torch.from_numpy(self.processor.fen_to_tensor(fen)[0])
+            flags = torch.from_numpy(self.processor.fen_to_tensor(fen)[1])
+
+            move_pred, _ = self.model(in_tensor, flags)   # (policy, value)
+            move_pred_masked = move_pred.masked_fill(~mask.bool(), -1e9)
+            moves_prob = torch.softmax(move_pred_masked, dim=1, dtype=torch.float32)
+            move_uci = self.processor.decode_policy_vector(moves_prob, side_to_move=side)
+
+        return self.apply_uci(board, move_uci, side)
+
+    def mcts_move(self, side, in_board, num_simulations=200, c_puct=1.5):
+        board = in_board.clone()
+        root_board = chess.Board(board.to_fen())
+        mcts = MCTS(self.model, self.processor, device="cpu", c_puct=c_puct)
+        best_move, _ = mcts.search(root_board, num_simulations)
+        return self.apply_uci(board, best_move.uci(), side)
 
 
     def make_random_move(self, side, board):
