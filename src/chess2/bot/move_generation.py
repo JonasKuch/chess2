@@ -15,7 +15,7 @@ stockfish.set_elo_rating(100)
 
 class MoveGenerator():
     def __init__(self, model_params_path, num_residual_blocks=6, channels=96, policy_channels=16,
-                 use_mcts=False, num_simulations=200):
+                 use_mcts=False, num_simulations=400):
         # Architecture must match the checkpoint being loaded. Defaults match the
         # current trained model (model_adamw_..._rb6_c96_best.pth); pass overrides
         # if you load a checkpoint trained with a different tower/head size.
