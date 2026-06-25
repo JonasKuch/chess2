@@ -30,7 +30,7 @@ import numpy as np
 
 ARCHIVE = os.path.join(os.path.dirname(__file__), "data_leela", "ccrl-v3.tar.bz2")
 OUT_PATH = os.path.join(os.path.dirname(__file__), "data_leela", "chess_data_list.pkl")
-NUM_RECORDS = 1_000_000
+NUM_RECORDS = 2_500_000
 RECORD_SIZE = 8276
 
 # Packed binary layout of a v3 record (matches struct '<I 1858f 104Q 7B b').
@@ -74,7 +74,11 @@ def build(num_records=NUM_RECORDS, archive=ARCHIVE, out_path=OUT_PATH):
             # flags = [us_ooo, us_oo, them_ooo, them_oo, side]
             flags = arr["cast"][:, :5].astype(np.int8).copy()
 
-            data_list.extend(zip(planes, flags, labels.tolist()))
+            # game result from the side-to-move's perspective (-1 / 0 / +1),
+            # used as the value-head target
+            results = arr["result"].astype(np.int8)
+
+            data_list.extend(zip(planes, flags, labels.tolist(), results.tolist()))
             cnt += k
 
             if cnt >= num_records:
@@ -85,8 +89,11 @@ def build(num_records=NUM_RECORDS, archive=ARCHIVE, out_path=OUT_PATH):
 
     # quick sanity check before dumping
     labels = np.array([d[2] for d in data_list])
+    results = np.array([d[3] for d in data_list])
+    rvals, rcounts = np.unique(results, return_counts=True)
     print(f"Sanity: frac label==0 = {(labels == 0).mean():.4f}, "
           f"distinct labels = {len(np.unique(labels))}", flush=True)
+    print(f"Sanity: result distribution = {dict(zip(rvals.tolist(), rcounts.tolist()))}", flush=True)
 
     print(f"Dumping to {out_path} ...", flush=True)
     joblib.dump(data_list, out_path, compress=3)
