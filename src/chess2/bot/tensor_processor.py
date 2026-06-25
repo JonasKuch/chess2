@@ -293,14 +293,14 @@ class TensorProcessor:
             flags[0, 0] = 1 if "Q" in castling_rights else 0
             flags[0, 1] = 1 if "K" in castling_rights else 0
             flags[0, 2] = 1 if "q" in castling_rights else 0
-            flags[0, 2] = 1 if "k" in castling_rights else 0
+            flags[0, 3] = 1 if "k" in castling_rights else 0
         
         if side_to_move == "b":
             flags[0, 4] = 0
             flags[0, 0] = 1 if "q" in castling_rights else 0
             flags[0, 1] = 1 if "k" in castling_rights else 0
             flags[0, 2] = 1 if "Q" in castling_rights else 0
-            flags[0, 2] = 1 if "K" in castling_rights else 0
+            flags[0, 3] = 1 if "K" in castling_rights else 0
         
         return tensor, flags, side_to_move
 

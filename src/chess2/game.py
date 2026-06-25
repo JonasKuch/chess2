@@ -15,7 +15,7 @@ import time
 
 
 class Game():
-    def __init__(self, in_gui = True, width = 700, height = 800, with_takeback = True, bot_pth = "/Users/jonas/coding/python/chess2/src/chess2/bot/saved_models/model_less_data_leela.pth"):
+    def __init__(self, in_gui = True, width = 700, height = 800, with_takeback = True, bot_pth = "/Users/jonas/coding/python/chess2/src/chess2/bot/saved_models/model_adamw_b256_e20_lr0.001_rb6_c96_best.pth"):
         self.board = Board()
         self.gui = GameLoop(width, height, self.board, self.on_undo, self.on_redo, self.on_give_up)
         self.move = Move()
