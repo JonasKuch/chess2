@@ -237,10 +237,10 @@ def main():
         print(f"\nEpoch {epoch}/{EPOCHS}  (lr={optimizer.param_groups[0]['lr']:.2e})\n"
               f"-------------------------------", flush=True)
 
-        tr_p, tr_v = train_loop(tr_b, tr_f, tr_y, tr_v, model,
-                                policy_loss_fn, value_loss_fn, optimizer, device)
-        val_p, val_v, val_top1 = validation_loop(va_b, va_f, va_y, va_v, model,
-                                                 policy_loss_fn, value_loss_fn, device)
+        tr_ploss, tr_vloss = train_loop(tr_b, tr_f, tr_y, tr_v, model,
+                                        policy_loss_fn, value_loss_fn, optimizer, device)
+        val_ploss, val_vloss, val_top1 = validation_loop(va_b, va_f, va_y, va_v, model,
+                                                         policy_loss_fn, value_loss_fn, device)
         scheduler.step()
 
         torch.save(model.state_dict(), last_path)
@@ -249,7 +249,7 @@ def main():
             torch.save(model.state_dict(), best_path)
             print(f"  ** new best top-1: {100*best_top1:.1f}% -> saved {best_path}", flush=True)
 
-        print(f"  train policy: {tr_p:.4f} | train value: {tr_v:.4f} | {time.time()-t0:.0f}s", flush=True)
+        print(f"  train policy: {tr_ploss:.4f} | train value: {tr_vloss:.4f} | {time.time()-t0:.0f}s", flush=True)
 
     print(f"\nDone. Best val top-1: {100*best_top1:.1f}%", flush=True)
     print(f"Best checkpoint: {best_path}", flush=True)
