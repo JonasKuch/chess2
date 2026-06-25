@@ -36,11 +36,11 @@ STOCKFISH_PATH = "/opt/homebrew/bin/stockfish"
 USE_MCTS = True
 NUM_SIMULATIONS = 200          # MCTS sims per move (lower = faster benchmark)
 
-OPPONENT_ELOS = [1320, 1500, 1700, 1900]   # Stockfish UCI_Elo rungs
+OPPONENT_ELOS = [1000, 1320, 1500, 1700, 1900]   # Stockfish UCI_Elo rungs
 GAMES_PER_LEVEL = 2            # colors alternate; keep even for balance
 STOCKFISH_DEPTH = 10           # SF search depth cap (kept low for speed)
 
-MAX_PLIES = 120
+MAX_PLIES = 400
 ADJUDICATE_MATERIAL = 4        # material lead that counts as a win at ply cap
 
 PIECE_VALUE = {"P": 1, "N": 3, "B": 3, "R": 5, "Q": 9}
