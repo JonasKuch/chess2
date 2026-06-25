@@ -2,9 +2,11 @@
 Headless self-play debug driver.
 
 The GUI game loop (Game.play) blocks on interactive mouse input, so this drives
-the engine directly -- board logic + the neural net's model_move -- to surface
-bugs without a display. Plays model vs model and prints each move + FEN, with
-end-condition detection mirroring Game.check_for_end.
+the engine directly -- board logic + the neural net's MCTS search -- to surface
+bugs without a display. Plays the engine against itself and prints each move +
+FEN, with end-condition detection mirroring Game.check_for_end.
+
+Set USE_MCTS = False to fall back to the raw policy (faster, weaker).
 """
 
 import os
@@ -18,8 +20,10 @@ from chess2.board import Board
 from chess2 import Color
 from chess2.bot import MoveGenerator
 
-CKPT = "/Users/jonas/coding/python/chess2/src/chess2/bot/saved_models/model_adamw_b256_e20_lr0.001_rb6_c96_best.pth"
+CKPT = "/Users/jonas/coding/python/chess2/src/chess2/bot/saved_models/model_adamw_b256_e12_lr0.001_rb6_c96_value_best.pth"
 MAX_PLIES = 60
+USE_MCTS = True
+NUM_SIMULATIONS = 200
 
 
 def main():
@@ -28,7 +32,7 @@ def main():
     board.update_grid()
     board.update_checks()
 
-    bot = MoveGenerator(CKPT)
+    bot = MoveGenerator(CKPT, use_mcts=USE_MCTS, num_simulations=NUM_SIMULATIONS)
     seen = Counter()
     print("start:", board.to_fen())
 
@@ -52,8 +56,8 @@ def main():
             print("THREEFOLD-REPETITION DRAW")
             return
 
-        # --- ask the net for a move ---
-        new_board = bot.model_move(side, board)
+        # --- ask the engine for a move (MCTS if enabled, else raw policy) ---
+        new_board = bot.bot_move(side, board)
         board.load_state(new_board)
         board.turn = Color.BLACK if side == Color.WHITE else Color.WHITE
         board.update_grid()
