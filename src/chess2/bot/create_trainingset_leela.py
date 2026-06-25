@@ -282,7 +282,7 @@ def parse_v3_gzip_stream(gzip_stream):
             # unpack into flat tuple
             data = V3_STRUCT.unpack(chunk)
             version = data[0]
-            probs = np.array(data[1:1+1858], dtype=np.int8)
+            probs = np.array(data[1:1+1858], dtype=np.float32)
             planes = np.array(data[1+1858:1+1858+104], dtype=np.uint64)
             flags = 1+1858+104
             cast_us_ooo, cast_us_oo, cast_th_ooo, cast_th_oo, side, rule50, mv_cnt = data[flags:flags+7]
@@ -364,9 +364,10 @@ if __name__ == '__main__':
 
         full_board = np.zeros((8, 8))
         planes = first["planes"][:12]
-        if first["side_to_move"] == 1:
-          planes[4], planes[5] = planes[5], planes[4]
-          planes[10], planes[11] = planes[11], planes[10]
+        # Convert Leela plane order [P,N,B,R,Q,K] -> model order [P,N,B,R,K,Q].
+        # This is a fixed reordering, NOT side-dependent: apply to every record.
+        planes[4], planes[5] = planes[5], planes[4]
+        planes[10], planes[11] = planes[11], planes[10]
         for board in planes:
             full_board += bitboard_to_matrix(board)
             print(bitboard_to_matrix(board))
@@ -389,9 +390,10 @@ if __name__ == '__main__':
         
     #     # planes als float32 Array
     #     planes = record["planes"][:12]
-    #     if record["side_to_move"] == 1:
-    #       planes[4], planes[5] = planes[5], planes[4]
-    #       planes[10], planes[11] = planes[11], planes[10]
+    #     # Convert Leela plane order [P,N,B,R,Q,K] -> model order [P,N,B,R,K,Q].
+    #     # Fixed reordering, NOT side-dependent: apply to every record.
+    #     planes[4], planes[5] = planes[5], planes[4]
+    #     planes[10], planes[11] = planes[11], planes[10]
         
     #     # flags / side_to_move als int Array
     #     flags = np.array([

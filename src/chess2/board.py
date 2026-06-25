@@ -89,6 +89,8 @@ class Board():
     def load_state(self, other_board):
         self.__init__()
         self.turn = copy.deepcopy(other_board.turn)
+        self.halfmove_clock = copy.deepcopy(other_board.halfmove_clock)
+        self.fullmove_clock = copy.deepcopy(other_board.fullmove_clock)
         for other_piece in other_board.pieces_on_board:
             new_piece = other_piece.clone(self)
             self.pieces_on_board.append(new_piece)
@@ -189,15 +191,22 @@ class Board():
         piece_placement = '/'.join(fen_rows)
         active_color = 'w' if self.turn == Color.WHITE else 'b'
 
-        # Castling rights
+        # Castling rights depend only on whether the king and the relevant rook
+        # have moved -- NOT on whether the squares are currently under attack
+        # (that is move legality, not a castling right, and made this field
+        # flicker, which in turn fed wrong castling flags to the network).
+        def _rook_unmoved(x, y, color):
+            sq = self.grid[y][x]
+            return isinstance(sq, Rook) and sq._color == color and not sq._has_moved
+
         castling = ''
-        if not self.white_king.castelling_square_under_attack_kingside and self.white_king.can_castle_kingside:
+        if self.white_king.can_castle_kingside and _rook_unmoved(7, 0, Color.WHITE):
             castling += 'K'
-        if not self.white_king.castelling_square_under_attack_queenside and self.white_king.can_castle_queenside:
+        if self.white_king.can_castle_queenside and _rook_unmoved(0, 0, Color.WHITE):
             castling += 'Q'
-        if not self.black_king.castelling_square_under_attack_kingside and self.black_king.can_castle_kingside:
+        if self.black_king.can_castle_kingside and _rook_unmoved(7, 7, Color.BLACK):
             castling += 'k'
-        if not self.black_king.castelling_square_under_attack_queenside and self.black_king.can_castle_queenside:
+        if self.black_king.can_castle_queenside and _rook_unmoved(0, 7, Color.BLACK):
             castling += 'q'
         if not castling:
             castling = '-'

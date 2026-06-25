@@ -12,8 +12,15 @@ stockfish.set_elo_rating(100)
 
 
 class MoveGenerator():
-    def __init__(self, model_params_path):
-        self.model = NeuralNetwork().to("cpu")
+    def __init__(self, model_params_path, num_residual_blocks=6, channels=96, policy_channels=16):
+        # Architecture must match the checkpoint being loaded. Defaults match the
+        # current trained model (model_adamw_..._rb6_c96_best.pth); pass overrides
+        # if you load a checkpoint trained with a different tower/head size.
+        self.model = NeuralNetwork(
+            num_residual_blocks=num_residual_blocks,
+            channels=channels,
+            policy_channels=policy_channels,
+        ).to("cpu")
         self.model.load_state_dict(torch.load(model_params_path, weights_only=True))
         self.model.eval()
         self.processor = TensorProcessor()
