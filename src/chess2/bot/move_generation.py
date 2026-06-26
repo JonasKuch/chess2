@@ -15,20 +15,24 @@ stockfish.set_elo_rating(100)
 
 class MoveGenerator():
     def __init__(self, model_params_path, num_residual_blocks=6, channels=96, policy_channels=16,
-                 use_mcts=False, num_simulations=400):
+                 use_mcts=False, num_simulations=400, mcts_batch_size=16):
         # Architecture must match the checkpoint being loaded. Defaults match the
         # current trained model (model_adamw_..._rb6_c96_best.pth); pass overrides
         # if you load a checkpoint trained with a different tower/head size.
+        # Batched MCTS feeds many leaves per forward, so the GPU pays off; raw
+        # policy is a single batch=1 forward per move, marginally faster on CPU.
+        self.device = "mps" if (use_mcts and torch.backends.mps.is_available()) else "cpu"
         self.model = NeuralNetwork(
             num_residual_blocks=num_residual_blocks,
             channels=channels,
             policy_channels=policy_channels,
-        ).to("cpu")
+        ).to(self.device)
         self.model.load_state_dict(torch.load(model_params_path, weights_only=True))
         self.model.eval()
         self.processor = TensorProcessor()
         self.use_mcts = use_mcts
         self.num_simulations = num_simulations
+        self.mcts_batch_size = mcts_batch_size
 
     def bot_move(self, side, board):
         """Pick a move with PUCT MCTS if enabled, else the raw policy argmax."""
@@ -157,10 +161,11 @@ class MoveGenerator():
 
         with torch.no_grad():
             mask = torch.from_numpy(self.processor.legal_moves_mask(fen))
-            in_tensor = torch.from_numpy(self.processor.fen_to_tensor(fen)[0])
-            flags = torch.from_numpy(self.processor.fen_to_tensor(fen)[1])
+            in_tensor = torch.from_numpy(self.processor.fen_to_tensor(fen)[0]).to(self.device)
+            flags = torch.from_numpy(self.processor.fen_to_tensor(fen)[1]).to(self.device)
 
             move_pred, _ = self.model(in_tensor, flags)   # (policy, value)
+            move_pred = move_pred.cpu()
             move_pred_masked = move_pred.masked_fill(~mask.bool(), -1e9)
             moves_prob = torch.softmax(move_pred_masked, dim=1, dtype=torch.float32)
             move_uci = self.processor.decode_policy_vector(moves_prob, side_to_move=side)
@@ -170,7 +175,8 @@ class MoveGenerator():
     def mcts_move(self, side, in_board, num_simulations=200, c_puct=1.5):
         board = in_board.clone()
         root_board = chess.Board(board.to_fen())
-        mcts = MCTS(self.model, self.processor, device="cpu", c_puct=c_puct)
+        mcts = MCTS(self.model, self.processor, device=self.device, c_puct=c_puct,
+                    batch_size=self.mcts_batch_size)
         best_move, _ = mcts.search(root_board, num_simulations)
         return self.apply_uci(board, best_move.uci(), side)
 

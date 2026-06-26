@@ -20,7 +20,7 @@ CKPT = "/Users/jonas/coding/python/chess2/src/chess2/bot/saved_models/model_adam
 # floor; higher = stronger but slower (each move is num_simulations net evals on
 # CPU, ~2-4s at 400). Set USE_MCTS=False to play the raw policy instead.
 USE_MCTS = True
-NUM_SIMULATIONS = 400
+NUM_SIMULATIONS = 1000
 
 
 if __name__ == "__main__":
