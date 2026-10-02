@@ -9,10 +9,10 @@ then click to move. The bot replies with the latest trained checkpoint.
 
 from chess2.game import Game
 
-# Latest trained model (policy + value head). Swap this path to try a different
-# checkpoint -- if it was trained with a different tower/head size, also pass the
-# matching architecture to MoveGenerator (see MoveGenerator.__init__).
-CKPT = "/Users/jonas/coding/python/chess2/src/chess2/bot/saved_models/model_adamw_b256_e12_lr0.001_rb6_c96_value_best.pth"
+# None = the weights shipped with the package (or $CHESS2_MODEL if set).
+# A checkpoint with a different tower/head size also needs the matching
+# architecture in MoveGenerator (see MoveGenerator.__init__).
+CKPT = None
 
 # MCTS makes the bot stronger than the raw policy by looking ahead -- BUT only
 # with enough simulations. Too few (~100) and the shallow search hangs pieces it

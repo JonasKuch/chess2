@@ -20,6 +20,8 @@ Notes / caveats:
 """
 
 import math
+import os
+import shutil
 from collections import Counter
 
 from chess2.board import Board
@@ -30,14 +32,14 @@ from stockfish import Stockfish
 # --------------------------------------------------------------------------- #
 # CONFIG
 # --------------------------------------------------------------------------- #
-MODEL_CKPT = "/Users/jonas/coding/python/chess2/src/chess2/bot/saved_models/model_adamw_b256_e12_lr0.001_rb6_c96_value_best.pth"
-STOCKFISH_PATH = "/opt/homebrew/bin/stockfish"
+MODEL_CKPT = None              # None = weights shipped with the package, or $CHESS2_MODEL
+STOCKFISH_PATH = os.environ.get("STOCKFISH_PATH") or shutil.which("stockfish")
 
 USE_MCTS = True
-NUM_SIMULATIONS = 200          # MCTS sims per move (lower = faster benchmark)
+NUM_SIMULATIONS = 400          # MCTS sims per move (lower = faster benchmark)
 
-OPPONENT_ELOS = [1000, 1320, 1500, 1700, 1900]   # Stockfish UCI_Elo rungs
-GAMES_PER_LEVEL = 2            # colors alternate; keep even for balance
+OPPONENT_ELOS = [1320, 1400, 1500, 1600]   # Stockfish UCI_Elo rungs (README result)
+GAMES_PER_LEVEL = 20           # colors alternate; keep even for balance (~15 min total)
 STOCKFISH_DEPTH = 10           # SF search depth cap (kept low for speed)
 
 MAX_PLIES = 400
@@ -156,7 +158,7 @@ def main():
     print(f"{'Stockfish Elo':>14} | {'score':>10} | {'model%':>7} | {'implied Elo':>11}")
     print("-" * 48)
     for elo, score, frac in rows:
-        implied = "" if frac in (0.0, 1.0) else f"{elo - dp(frac):.0f}"
+        implied = "" if frac in (0.0, 1.0) else f"{elo + dp(frac):.0f}"
         print(f"{elo:>14} | {score:>4}/{GAMES_PER_LEVEL:<5} | {frac*100:>6.0f}% | {implied:>11}")
     print("=" * 48)
 

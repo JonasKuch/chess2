@@ -5,9 +5,26 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "chess2"
 version = "0.0.1"
+requires-python = ">=3.13"
+dependencies = [
+    "chess",
+    "h5py",
+    "joblib",
+    "matplotlib",
+    "numpy",
+    "orjson",
+    "pygame",
+    "stockfish",
+    "torch",
+    "torchsummary",
+    "zstandard",
+]
 
 [tool.setuptools]
 package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+chess2 = ["bot/weights/*.pth", "gui/fonts/*.ttf", "gui/pieces_img/*.png"]

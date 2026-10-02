@@ -8,6 +8,8 @@ from chess2.gui import BoardRenderer
 from chess2.gui import PiecesRenderer
 from chess2.gui import EventHandler
 from chess2.gui import Button
+from chess2.gui.assets import PIECES_DIR
+import os
 from chess2 import Color, Action
 from chess2.board import Board
 from chess2.pieces import *
@@ -65,7 +67,7 @@ class GameLoop():
         # load and scale images
         img_list = [
             pygame.transform.scale(
-                pygame.image.load(f"src/chess2/gui/pieces_img/{piece}.png"),
+                pygame.image.load(os.path.join(PIECES_DIR, f"{piece}.png")),
                 (self.square_width, self.square_width)
             )
             for piece in pieces_list

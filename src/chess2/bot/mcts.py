@@ -6,8 +6,8 @@ terminal detection come for free). The network supplies, per node:
   - priors P(a) from the policy head (used in the PUCT exploration term),
   - a scalar value V in [-1, 1] from the value head (leaf evaluation, no rollout).
 
-Move <-> policy-index mapping reuses TensorProcessor (legal_moves_mask,
-fen_to_tensor, uci_to_idx), so the search shares exactly the encoding the net
+Move <-> policy-index mapping reuses TensorProcessor (legal_move_indices,
+fen_to_tensor), so the search shares exactly the encoding the net
 was trained on.
 
 The dominant cost of a search is the per-simulation network forward pass. Rather
@@ -60,15 +60,14 @@ class MCTS:
 
     # --- network evaluation -------------------------------------------------
     def _encode(self, board):
-        """CPU-only: encode `board` to (in_tensor, flags, mask, legal_moves).
+        """CPU-only: encode `board` to (in_tensor, flags, legal) where legal maps
+        policy index -> chess.Move.
 
         No network call -- the encodings are stacked and evaluated in batches.
         """
-        fen = board.fen()
-        mask = self.processor.legal_moves_mask(fen).astype(bool)   # (1858,)
-        in_tensor, flags, _ = self.processor.fen_to_tensor(fen)    # (1,12,8,8), (1,5)
-        legal_moves = list(board.legal_moves)
-        return in_tensor, flags, mask, legal_moves
+        in_tensor, flags, _ = self.processor.fen_to_tensor(board.fen())  # (1,12,8,8), (1,5)
+        legal = self.processor.legal_move_indices(board)
+        return in_tensor, flags, legal
 
     @torch.no_grad()
     def _forward_batch(self, in_tensors, flags_list):
@@ -81,28 +80,22 @@ class MCTS:
         policy_logits, value = self.model(x, fl)
         return policy_logits.cpu().numpy(), value.reshape(-1).cpu().numpy()
 
-    def _priors_from_logits(self, logits, mask, legal_moves, turn):
-        """Masked softmax over legal indices -> {chess.Move: prior}."""
-        logits = np.where(mask, logits, -np.inf)
-        logits = logits - logits.max()
-        exp = np.exp(logits)
-        exp[~mask] = 0.0
-        probs = exp / (exp.sum() + 1e-8)
-
-        side = "w" if turn else "b"
-        priors = {}
-        for move in legal_moves:
-            uci = move.uci()
-            if uci[-1] == "n":          # knight promotions are not in the 1858 space
-                continue
-            priors[move] = float(probs[self.processor.uci_to_idx(uci, side)])
-        return priors
+    @staticmethod
+    def _priors_from_logits(logits, legal):
+        """Softmax over the legal indices -> {chess.Move: prior}."""
+        if not legal:
+            return {}
+        idx = np.fromiter(legal.keys(), dtype=np.int64)
+        z = logits[idx] - logits[idx].max()
+        probs = np.exp(z)
+        probs /= probs.sum()
+        return {move: float(p) for move, p in zip(legal.values(), probs)}
 
     def evaluate(self, board):
         """Single-board (priors, value) -- convenience wrapper over the batch path."""
-        in_tensor, flags, mask, legal_moves = self._encode(board)
+        in_tensor, flags, legal = self._encode(board)
         logits, values = self._forward_batch([in_tensor], [flags])
-        priors = self._priors_from_logits(logits[0], mask, legal_moves, board.turn)
+        priors = self._priors_from_logits(logits[0], legal)
         return priors, float(values[0])
 
     # --- tree ops -----------------------------------------------------------
@@ -185,8 +178,7 @@ class MCTS:
                 logits, values = self._forward_batch(in_tensors, flags_list)
                 expanded = set()
                 for i, (path, board, node, _) in enumerate(pending):
-                    in_tensor, flags, mask, legal_moves = encodings[i]
-                    priors = self._priors_from_logits(logits[i], mask, legal_moves, board.turn)
+                    priors = self._priors_from_logits(logits[i], encodings[i][2])
                     # the same leaf can be collected twice in a batch; expand once
                     if id(node) not in expanded and not node.is_expanded:
                         self._expand(node, priors)

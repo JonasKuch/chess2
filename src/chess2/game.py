@@ -15,18 +15,26 @@ import time
 
 
 class Game():
-    def __init__(self, in_gui = True, width = 700, height = 800, with_takeback = True, bot_pth = "/Users/jonas/coding/python/chess2/src/chess2/bot/saved_models/model_adamw_b256_e20_lr0.001_rb6_c96_best.pth", use_mcts = False, num_simulations = 400):
+    def __init__(self, in_gui = True, width = 700, height = 800, with_takeback = True, bot_pth = None, use_mcts = False, num_simulations = 400):
         self.board = Board()
         self.gui = GameLoop(width, height, self.board, self.on_undo, self.on_redo, self.on_give_up)
         self.move = Move()
         self.start_screen = StartScreen(self.gui.window)
         self.end_screen = EndScreen(self.gui.window, self.start_screen)
-        self.bot = MoveGenerator(bot_pth, use_mcts=use_mcts, num_simulations=num_simulations)
+        self._bot = None    # loaded on first bot move, so human vs human needs no weights
+        self._bot_args = dict(model_params_path=bot_pth, use_mcts=use_mcts, num_simulations=num_simulations)
         self.in_gui = in_gui
         self.action = None
         self.with_takeback = with_takeback
         self.running = True
         self.message = None
+
+
+    @property
+    def bot(self):
+        if self._bot is None:
+            self._bot = MoveGenerator(**self._bot_args)
+        return self._bot
 
 
     def translate_input(self, input_string):

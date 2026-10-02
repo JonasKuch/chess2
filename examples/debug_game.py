@@ -20,7 +20,7 @@ from chess2.board import Board
 from chess2 import Color
 from chess2.bot import MoveGenerator
 
-CKPT = "/Users/jonas/coding/python/chess2/src/chess2/bot/saved_models/model_adamw_b256_e12_lr0.001_rb6_c96_value_best.pth"
+CKPT = None   # None = weights shipped with the package, or $CHESS2_MODEL
 MAX_PLIES = 60
 USE_MCTS = True
 NUM_SIMULATIONS = 200

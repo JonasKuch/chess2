@@ -1,199 +1,104 @@
-# Chess2
+# chess2
 
-A comprehensive Python implementation of a chess game featuring a graphical user interface, AI-powered move generation using a neural network, and support for various game modes.
+A chess game I wrote from scratch in Python, with a pygame GUI and a small AlphaZero-style bot to play against.
 
-## Table of Contents
+![A game against the bot](docs/demo.gif)
 
-- [Features](#features)
-- [Usage](#usage)
-- [Project Structure](#project-structure)
-- [Modules Overview](#modules-overview)
-- [AI and Neural Network](#ai-and-neural-network)
-- [GUI Components](#gui-components)
+## What this is
 
-## Features
+It started as an exercise in writing the rules of chess myself: piece movement, check, castling, en passant, promotion, threefold repetition. All of that lives in my own engine (`board.py`, `pieces/`), and the GUI and human moves run on it.
 
-- **Complete Chess Game Logic**: Full implementation of chess rules including piece movements, check/checkmate detection, castling, en passant, and pawn promotion
-- **Graphical User Interface**: Pygame-based GUI with intuitive board rendering and piece visualization
-- **AI Opponent**: Neural network-powered bot trained on Leela Chess Zero data for intelligent move generation
-- **Move History and Undo/Redo**: Complete move caching system with takeback functionality
-- **Game Modes**: Support for human vs human and human vs AI
-- **Data Handling**: Tools for working with pre-processed chess datasets in Leela Chess Zero format with bitboard representations
-- **Extensible Architecture**: Modular design allowing easy addition of new features
+Later I added a bot. It is a policy/value network combined with Monte Carlo tree search, roughly the AlphaZero recipe, but trained by supervised learning on existing games instead of self-play. For the bot's search I use [python-chess](https://python-chess.readthedocs.io/) for move generation, because it is much faster than my own engine.
 
-## Usage
+## How the bot works
 
-### Basic Game
+**Input.** A position is encoded from the point of view of the side to move: 12 planes of 8×8 for the pieces (own and opponent, six piece types each) plus 5 planes for castling rights and side to move.
 
-Run a game with GUI:
-```python
-from chess2.game import Game
+**Network.** A small ResNet with 6 residual blocks and 96 channels, followed by two heads:
+- a policy head that scores the 1858 possible moves (the Leela Chess Zero move encoding),
+- a value head with a tanh output that estimates the game result from the side to move's view.
 
-game = Game()
-game.play()
+**Search.** PUCT Monte Carlo tree search: the policy gives the priors, the value head evaluates leaves, and there are no random rollouts. To keep the network busy, leaves are collected in batches using virtual loss and evaluated in a single forward pass. More simulations means stronger play. Below roughly 400 simulations the search is too shallow and the bot starts hanging pieces.
+
+## Training data
+
+The training data is a Leela Chess Zero dataset (`ccrl-v3.tar.bz2`) built from CCRL engine games. I use 2.5 million positions. They are split by game into 2.3M for training and 200k for validation, so positions from the same game never end up on both sides of the split.
+
+For each position the targets are:
+- the move that was played (policy, with label smoothing),
+- the final result of the game (value).
+
+Training uses AdamW and runs on Apple Silicon (MPS) or the CPU:
+
+```bash
+python -m chess2.bot.regenerate_dataset   # data_leela/ccrl-v3.tar.bz2 -> data_leela/chess_data_list.pkl
+python -m chess2.bot.train
 ```
 
-### Headless Game
+The raw data isn't in the repo. The trained weights are: `src/chess2/bot/weights/chess2_rb6_c96.pth`.
 
-Run without GUI for automated testing, scripting, or engine integration:
-```python
-from chess2.game import Game
+One bug took me a while to find: the board encoding at play time didn't match the training data for White. Leela mirrors the files in its bitboards, and that mirroring was missing on the inference side. The bot only played properly as Black. Castling had a similar problem: Leela writes it as king-takes-rook (`e1h1`), so the bot almost never castled. `tests/test_encoding.py` now rebuilds real training positions and checks that both paths produce identical tensors and move indices.
 
-game = Game(in_gui=False)
-# Use game APIs directly to simulate moves or integrate into a larger agent.
+## Try it
+
+You need Python 3.13+.
+
+```bash
+git clone https://github.com/JonasKuch/chess2.git
+cd chess2
+uv sync                      # or: pip install -e .
 ```
 
-### AI Move Generation
+The trained weights (12 MB) ship with the package, so you can start playing right away:
 
-Use the neural network bot:
-```python
-from chess2.bot.move_generation import MoveGenerator
-
-bot = MoveGenerator("path/to/model.pth")
-# Move using the model
-next_board = bot.model_move(board.turn, board)
-# Or use Stockfish as a reference engine
-next_board_sf = bot.stockfish_move(board.turn, board)
+```bash
+python examples/play.py
 ```
 
-### Data Processing
+On the start screen you choose your color and whether to play the bot or another person. You move by clicking a piece and then its target square. `<` and `>` take moves back and forward, and `GIVE UP` resigns. Each bot move takes a few seconds, because the search runs 1000 simulations by default. You can lower `NUM_SIMULATIONS` in `examples/play.py` for faster moves.
 
-Load pre-processed chess training data:
-```python
-from chess2.bot import ChessDataset
-from torch.utils.data import DataLoader
+Two environment variables are useful:
+- `CHESS2_MODEL` points to a different weights file.
+- `STOCKFISH_PATH` is needed only if Stockfish isn't on your PATH.
 
-# Load training data from pickle or HDF5 format
-dataset = ChessDataset("path/to/data.pkl", start=0, end=1000)
-loader = DataLoader(dataset, batch_size=32, shuffle=True)
+## How strong is it?
 
-for boards, flags, prob_idx in loader:
-    # boards: bitboard representation
-    # flags: additional position information
-    # prob_idx: preferred move index
-    pass
+On a validation sample of 2000 positions, the network's top move matches the move played in the game about 37% of the time, for both colors.
+
+To measure playing strength I let the bot (MCTS, 400 simulations) play 80 games against Stockfish with limited strength, 20 at each level and with alternating colors:
+
+| Stockfish level | Bot score |
+|---|---|
+| 1320 | 12.5 / 20 |
+| 1400 | 8.5 / 20 |
+| 1500 | 5.5 / 20 |
+| 1600 | 3 / 20 |
+
+That works out to a performance of roughly **1350 Elo**, give or take about 50. The bot scores about the same with White and Black. This is Elo against Stockfish's limited-strength mode, not a human rating. Games that don't finish within 400 plies are decided by material.
+
+To reproduce it, run `examples/play_strength.py`. You need [Stockfish](https://stockfishchess.org/) for this. Set the levels and the number of games at the top of the script.
+
+## Layout
+
+```
+src/chess2/            game rules (board.py, move.py, pieces/) and the game loop (game.py)
+src/chess2/gui/        pygame interface
+src/chess2/bot/        network, MCTS, data pipeline, training
+examples/              play.py, play_strength.py, debug_game.py (headless self-play)
+tests/                 encoding check against real training data
 ```
 
-## Project Structure
+## Limitations
 
-```
-chess2/
-├── src/chess2/
-│   ├── __init__.py          # Main package exports
-│   ├── board.py             # Board representation and state management
-│   ├── enums.py             # Color, PieceType, and Action enumerations
-│   ├── game.py              # Main game loop and metadata
-│   ├── move.py              # Move history, undo/redo, repetition detection
-│   ├── players.py           # Player representation
-│   ├── bot/                 # AI and machine learning components
-│   │   ├── __init__.py
-│   │   ├── dataset.py       # PyTorch dataset for training
-│   │   ├── neural_network.py # Neural network architecture
-│   │   ├── move_generation.py # AI move selection logic
-│   │   ├── tensor_processor.py # Data processing utilities
-│   │   ├── dataset_filter.py # Filtering training data
-│   │   ├── training.ipynb   # Training scripts
-│   │   ├── create_dataset_leela.py  # Leela Chess Zero data handling
-│   │   └── data/            # Training data and models
-│   ├── gui/                 # Graphical user interface
-│   │   ├── __init__.py
-│   │   ├── gui.py           # Main game loop for GUI
-│   │   ├── window.py        # Window management
-│   │   ├── board_renderer.py # Board visualization
-│   │   ├── pieces_renderer.py # Piece rendering
-│   │   ├── event_handler.py # Input handling
-│   │   ├── button.py        # UI buttons
-│   │   ├── start_screen.py  # Game start interface
-│   │   └── end_screen.py    # Game end interface
-│   └── pieces/              # Chess piece implementations
-│       ├── __init__.py
-│       ├── base.py          # Base Piece class
-│       ├── pawn.py          # Pawn-specific logic
-│       ├── rook.py          # Rook-specific logic
-│       ├── knight.py        # Knight-specific logic
-│       ├── bishop.py        # Bishop-specific logic
-│       ├── queen.py         # Queen-specific logic
-│       └── king.py          # King-specific logic
-├── examples/                # Usage examples
-│   └── debug_game.py        # Basic game example
-├── tests/                   # Unit tests (currently empty)
-├── chess.ipynb              # Jupyter notebook with project overview
-├── pyproject.toml           # Project configuration
-└── README.md               # This file
-```
+**The bot**
+- No self-play. The bot only imitates the moves in the engine games, so it never learns from its own mistakes.
+- The input contains only the current position, with no history. The network can't see repetitions coming.
 
-## Modules Overview
+**My engine**
+- The 50-move counter ignores king and rook moves.
+- Insufficient material isn't detected as a draw.
 
-### Core Game Logic
+**The code**
+- `training.py`, `dataset.py`, `dataset_filter.py` and the notebooks are earlier experiments. The current pipeline is `regenerate_dataset.py` + `train.py`.
 
-- **`board.py`**: Manages the 8x8 chess board, piece positions, and game state. Handles board initialization, piece placement, and state queries.
-
-- **`game.py`**: Orchestrates the overall game flow, including turn management, move validation, and game end conditions. Integrates GUI and AI components.
-
-- **`move.py`**: Implements move history tracking with undo/redo functionality and threefold repetition detection for draws.
-
-- **`enums.py`**: Defines core enumerations for colors, piece types, and game actions.
-
-- **`players.py`**: Simple player representation with name and color attributes.
-
-### Chess Pieces
-
-Located in `pieces/`, each piece type inherits from a base `Piece` class and implements specific movement rules:
-
-- **Base Piece**: Common functionality for all pieces
-- **Pawn**: Handles pawn-specific moves, promotion, and en passant
-- **Rook**: Rook movement and castling logic
-- **Knight**: L-shaped knight moves
-- **Bishop**: Diagonal bishop movement
-- **Queen**: Combination of rook and bishop moves
-- **King**: King movement, castling, and check detection
-
-### AI and Neural Network
-
-The `bot/` directory contains the machine learning components:
-
-- **`neural_network.py`**: Implements a deep convolutional neural network architecture with residual connections and policy head
-
-- **`move_generation.py`**: Implements move selection, including methods for model move (`model_move`), Stockfish move (`stockfish_move`), and all-legal-moves generation (`get_all_possible_next_boards`) (this part uses the python-chess library). Supports pawn promotion, randomized selection, and board cloning for safe position exploration.
-
-- **`dataset.py`**: PyTorch Dataset class for loading chess training data from pre-processed pickle files containing bitboard representations.
-
-- **`tensor_processor.py`**: Contains `TensorProcessor`, which converts FEN strings to neural network tensors, maps UCI moves to policy indices, decodes model output to moves, and generates legal move masks. This is used to prepare integrate the model with game state.
-
-- **`dataset_filter.py`**: Filters and processes Lichess data (which is currently not used) to create high-quality training datasets based on depth and evaluation criteria.
-
-- **`create_dataset_leela.py`**: Handles parsing and processing of raw Leela Chess Zero data, converting it into usable datasets with appropriate formatting.
-
-- **`training.ipynb`**: Contains training loops and optimization procedures for the neural network.
-
-### Graphical User Interface
-
-The `gui/` directory provides a complete Pygame-based interface:
-
-- **`gui.py`**: Main game loop handling rendering and user interaction.
-- **`window.py`**: Window creation and management.
-- **`board_renderer.py`**: Renders the chess board grid and coordinates.
-- **`pieces_renderer.py`**: Handles piece sprite rendering and animation.
-- **`event_handler.py`**: Processes mouse and keyboard input.
-- **`button.py`**: Reusable UI button components.
-- **`start_screen.py`**: Initial game setup and menu.
-- **`end_screen.py`**: Game over screen with results and replay options.
-
-## AI and Neural Network
-
-The AI system uses a deep convolutional neural network trained on millions of chess positions. The architecture consists of:
-
-1. **Input Layer**: 8x8x12 board representation (12 planes for different piece types and colors)
-2. **Convolutional Layers**: Initial 3x3 convolution with 64 filters
-3. **Residual Blocks**: 4 residual blocks for deep feature extraction
-4. **Policy Head**: Fully connected layers; Predicts move probabilities (1858 possible moves)
-
-Training data is in Leela Chess Zero format, using bitboard representations of chess positions. Data is pre-processed into pickle files containing: board bitboards, position flags, and preferred move indices.
-
-## GUI Components
-
-The GUI provides an intuitive chess experience with:
-
-- **Visual Board**: Clear 8x8 grid and piece images 
-- **Interactive Controls**: Click-to-move interface with piece highlighting and legal moves indication
-- **Menu System**: Start screen for game configuration, end screen for results
+Self-play training on top of the supervised model would be the obvious next step.

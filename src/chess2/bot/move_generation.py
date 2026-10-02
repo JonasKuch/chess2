@@ -3,21 +3,41 @@ from chess2.pieces import Pawn, Queen, Bishop, Rook, Knight
 from chess2 import Color
 import numpy as np
 import copy
+import os
+import shutil
 from stockfish import Stockfish
 import torch
 import chess
 from chess2.bot import NeuralNetwork, TensorProcessor
 from chess2.bot.mcts import MCTS
-stockfish = Stockfish(path="/opt/homebrew/bin/stockfish")
-stockfish.set_elo_rating(100)
+
+_stockfish = None
+
+
+def default_model_path():
+    """$CHESS2_MODEL if set, else the weights shipped with the package."""
+    return os.environ.get("CHESS2_MODEL") or os.path.join(
+        os.path.dirname(os.path.abspath(__file__)), "weights", "chess2_rb6_c96.pth")
+
+
+def get_stockfish(elo=1320):
+    """Start Stockfish on first use. Binary from $STOCKFISH_PATH, else from PATH."""
+    global _stockfish
+    if _stockfish is None:
+        path = os.environ.get("STOCKFISH_PATH") or shutil.which("stockfish")
+        if path is None:
+            raise RuntimeError("Stockfish not found: install it or set STOCKFISH_PATH")
+        _stockfish = Stockfish(path=path)
+        _stockfish.set_elo_rating(elo)
+    return _stockfish
 
 
 
 class MoveGenerator():
-    def __init__(self, model_params_path, num_residual_blocks=6, channels=96, policy_channels=16,
+    def __init__(self, model_params_path=None, num_residual_blocks=6, channels=96, policy_channels=16,
                  use_mcts=False, num_simulations=400, mcts_batch_size=16):
         # Architecture must match the checkpoint being loaded. Defaults match the
-        # current trained model (model_adamw_..._rb6_c96_best.pth); pass overrides
+        # shipped model (bot/weights/chess2_rb6_c96.pth); pass overrides
         # if you load a checkpoint trained with a different tower/head size.
         # Batched MCTS feeds many leaves per forward, so the GPU pays off; raw
         # policy is a single batch=1 forward per move, marginally faster on CPU.
@@ -27,7 +47,11 @@ class MoveGenerator():
             channels=channels,
             policy_channels=policy_channels,
         ).to(self.device)
-        self.model.load_state_dict(torch.load(model_params_path, weights_only=True))
+        model_params_path = model_params_path or default_model_path()
+        if not os.path.exists(model_params_path):
+            raise FileNotFoundError(
+                f"no model weights at {model_params_path}: check CHESS2_MODEL")
+        self.model.load_state_dict(torch.load(model_params_path, weights_only=True, map_location=self.device))
         self.model.eval()
         self.processor = TensorProcessor()
         self.use_mcts = use_mcts
@@ -93,6 +117,7 @@ class MoveGenerator():
 
         # tell Stockfish the position
         fen = board.to_fen()
+        stockfish = get_stockfish()
         stockfish.set_fen_position(fen)
 
         # get UCI best move, e.g. "e7e8q" or "e2e4"
@@ -158,19 +183,17 @@ class MoveGenerator():
     def model_move(self, side, in_board):
         board = in_board.clone()
         fen = board.to_fen()
+        legal = self.processor.legal_move_indices(chess.Board(fen))
+        in_tensor, flags, _ = self.processor.fen_to_tensor(fen)
 
         with torch.no_grad():
-            mask = torch.from_numpy(self.processor.legal_moves_mask(fen))
-            in_tensor = torch.from_numpy(self.processor.fen_to_tensor(fen)[0]).to(self.device)
-            flags = torch.from_numpy(self.processor.fen_to_tensor(fen)[1]).to(self.device)
+            logits, _ = self.model(torch.from_numpy(in_tensor).to(self.device),
+                                   torch.from_numpy(flags).float().to(self.device))
+        logits = logits[0].cpu().numpy()
 
-            move_pred, _ = self.model(in_tensor, flags)   # (policy, value)
-            move_pred = move_pred.cpu()
-            move_pred_masked = move_pred.masked_fill(~mask.bool(), -1e9)
-            moves_prob = torch.softmax(move_pred_masked, dim=1, dtype=torch.float32)
-            move_uci = self.processor.decode_policy_vector(moves_prob, side_to_move=side)
-
-        return self.apply_uci(board, move_uci, side)
+        # highest-scoring legal move
+        best_idx = max(legal, key=lambda idx: logits[idx])
+        return self.apply_uci(board, legal[best_idx].uci(), side)
 
     def mcts_move(self, side, in_board, num_simulations=200, c_puct=1.5):
         board = in_board.clone()

@@ -1,4 +1,5 @@
 import pygame
+from chess2.gui.assets import FONT_PATH
 
 class Button():
     def __init__(self, position:tuple, width, height, color, text, text_color, text_size, callback):
@@ -9,7 +10,7 @@ class Button():
         self.color = color
         self.text = text
         self.text_color = text_color
-        self.font = pygame.font.Font("src/chess2/gui/fonts/Roboto-Regular.ttf", text_size)
+        self.font = pygame.font.Font(FONT_PATH, text_size)
         self.callback = callback
 
         self._rendered_text = self.font.render(text, True, self.text_color)

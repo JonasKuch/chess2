@@ -256,6 +256,10 @@ class TensorProcessor:
         Opps Queens
 
         immer aus der perspektive des spielers, der gerade an der reihe ist
+
+        Layout matches the Leela training data (see train.decode_records): files
+        are mirrored for both colors, ranks are flipped for black, and flag 4 is
+        1 when black is to move.
         '''
 
         piece_map_white = {"P":0, "N":1, "B":2, "R":3, "K":4, "Q":5,
@@ -283,20 +287,19 @@ class TensorProcessor:
                         tensor[0, piece_map_black[char], r, c] = 1
                     
                     else:
-                        tensor[0, piece_map_white[char], r, c] = 1
-                    
+                        tensor[0, piece_map_white[char], r, 7 - c] = 1
+
                     col_idx += 1
 
-        flags[0, 4] = 1 if side_to_move == "w" else 0
-        if side_to_move == "w": 
-            flags[0, 4] = 1
+        if side_to_move == "w":
+            flags[0, 4] = 0
             flags[0, 0] = 1 if "Q" in castling_rights else 0
             flags[0, 1] = 1 if "K" in castling_rights else 0
             flags[0, 2] = 1 if "q" in castling_rights else 0
             flags[0, 3] = 1 if "k" in castling_rights else 0
         
         if side_to_move == "b":
-            flags[0, 4] = 0
+            flags[0, 4] = 1
             flags[0, 0] = 1 if "q" in castling_rights else 0
             flags[0, 1] = 1 if "k" in castling_rights else 0
             flags[0, 2] = 1 if "Q" in castling_rights else 0
@@ -330,17 +333,30 @@ class TensorProcessor:
         return self.index_to_uci(idx, side_to_move)
     
 
+    def move_to_idx(self, board, move):
+        """Policy index of a python-chess `move` on `board`.
+
+        Leela writes castling as king-takes-rook (e1h1 / e1a1) and a knight
+        promotion as the plain pawn move (a7a8); python-chess uses e1g1 and a7a8n.
+        """
+        uci = move.uci()
+        if board.is_castling(move):
+            kingside = chess.square_file(move.to_square) > chess.square_file(move.from_square)
+            uci = uci[:2] + ("h" if kingside else "a") + uci[3]
+        elif move.promotion == chess.KNIGHT:
+            uci = uci[:4]
+        return self.uci_to_idx(uci, "w" if board.turn else "b")
+
+
+    def legal_move_indices(self, board):
+        """{policy index: chess.Move} for every legal move on a python-chess board."""
+        return {self.move_to_idx(board, move): move for move in board.legal_moves}
+
+
     def legal_moves_mask(self, fen):
         vector = np.zeros(1858, dtype=np.int8)
-        board = chess.Board(fen)
-        side_to_move = "w" if board.turn else "b"
-
-        for move in board.legal_moves:
-            uci = move.uci()
-            if uci[-1] == "n": continue
-            idx = self.uci_to_idx(uci, side_to_move)
+        for idx in self.legal_move_indices(chess.Board(fen)):
             vector[idx] = 1
-        
         return vector
     
 if __name__ == "__main__":

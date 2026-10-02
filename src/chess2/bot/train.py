@@ -81,7 +81,21 @@ def load_decoded(path):
         boards uint8 (N,12,8,8), flags float32 (N,5), labels int64 (N,)
     Stored as uint8 (~768 MB for 1M) and cast to float per-batch on-device.
     """
-    raw = joblib.load(path)
+    boards, flags, labels, values = decode_records(joblib.load(path))
+    return (
+        torch.from_numpy(boards),                 # uint8
+        torch.from_numpy(flags),                  # float32
+        torch.from_numpy(labels),                 # int64
+        torch.from_numpy(values),                 # float32 (value-head target)
+    )
+
+
+def decode_records(raw):
+    """Decode (bitboards, flags, label, result) records to numpy arrays.
+
+    This is the input layout the net was trained on. TensorProcessor.fen_to_tensor
+    has to reproduce it exactly (checked in tests/test_encoding.py).
+    """
     n = len(raw)
 
     bb = np.stack([np.asarray(p, dtype=np.uint64) for p, _, _, _ in raw])  # (N,12)
@@ -91,13 +105,7 @@ def load_decoded(path):
     flags = np.stack([np.asarray(f, dtype=np.float32) for _, f, _, _ in raw])
     labels = np.array([lbl for _, _, lbl, _ in raw], dtype=np.int64)
     values = np.array([v for _, _, _, v in raw], dtype=np.float32)  # result in {-1,0,+1}
-
-    return (
-        torch.from_numpy(boards),                 # uint8
-        torch.from_numpy(flags),                  # float32
-        torch.from_numpy(labels),                 # int64
-        torch.from_numpy(values),                 # float32 (value-head target)
-    )
+    return boards, flags, labels, values
 
 
 def iter_batches(n, batch_size, device, shuffle):

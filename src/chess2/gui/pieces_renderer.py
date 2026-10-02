@@ -1,10 +1,11 @@
 from chess2.board import Board
 from chess2 import Color
 import pygame
+from chess2.gui.assets import PIECES_DIR
 
 
 class PiecesRenderer():
-    def __init__(self, window, board:Board, pieces_dir = "src/chess2/gui/pieces_img"):
+    def __init__(self, window, board:Board, pieces_dir = PIECES_DIR):
         self.square_width = 0.8*window.width / 8
         self.surface = window.screen
         self.board = board

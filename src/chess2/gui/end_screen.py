@@ -2,6 +2,7 @@ from chess2.gui import Button, EventHandler, BoardRenderer, PiecesRenderer, Star
 from chess2.board import Board
 from chess2 import Color
 import pygame
+from chess2.gui.assets import FONT_PATH
 
 
 
@@ -52,7 +53,7 @@ class EndScreen():
 
         # Draw the "CHECK MATE!" text
         font_size = int(self.button_height / 2)
-        font = pygame.font.Font("src/chess2/gui/fonts/Roboto-Regular.ttf", font_size)
+        font = pygame.font.Font(FONT_PATH, font_size)
         text = font.render(f"{message}", True, (0, 0, 0))
         text_rect = text.get_rect(center=(self.end_window_left + self.end_window_width/2, self.end_window_top + self.end_window_height/2 - 30))
         self.surface.blit(text, text_rect)
