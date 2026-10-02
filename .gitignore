@@ -23,3 +23,5 @@ data_leela/
 
 # Trained params
 saved_models/
+
+games/
