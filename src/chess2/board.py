@@ -15,6 +15,7 @@ class Board():
         self.pieces_on_board = []
         self.halfmove_clock = 0
         self.fullmove_clock = 1
+        self.last_move = None   # (from, to) squares, highlighted in the GUI
     
     
     def setup_pieces(self, color):
@@ -77,6 +78,7 @@ class Board():
         new_board.turn = copy.deepcopy(self.turn)
         new_board.halfmove_clock = copy.deepcopy(self.halfmove_clock)
         new_board.fullmove_clock = copy.deepcopy(self.fullmove_clock)
+        new_board.last_move = self.last_move
         for old_piece in self.pieces_on_board:
             new_piece = old_piece.clone(new_board)
             new_board.pieces_on_board.append(new_piece)
@@ -91,6 +93,7 @@ class Board():
         self.turn = copy.deepcopy(other_board.turn)
         self.halfmove_clock = copy.deepcopy(other_board.halfmove_clock)
         self.fullmove_clock = copy.deepcopy(other_board.fullmove_clock)
+        self.last_move = other_board.last_move
         for other_piece in other_board.pieces_on_board:
             new_piece = other_piece.clone(self)
             self.pieces_on_board.append(new_piece)

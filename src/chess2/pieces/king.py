@@ -56,6 +56,7 @@ class King(Piece):
                 self.board.grid[y_new][x_new]._captured = True
                 self.board.halfmove_clock = 0
             self.reset_en_passant_vulnerabiity()
+            self.board.last_move = (self._position, end_position)
             self._position = end_position
             self._has_moved = True
             self.board.manage_castelling_squares_under_attack()

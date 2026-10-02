@@ -46,19 +46,15 @@ You need Python 3.13+.
 ```bash
 git clone https://github.com/JonasKuch/chess2.git
 cd chess2
-uv sync                      # or: pip install -e .
+uv run chess2
 ```
 
-The trained weights (12 MB) ship with the package, so you can start playing right away:
+`uv run` sets up the environment on the first call. The trained weights (12 MB) ship with the package, so the bot works right away. Without uv: `pip install -e .`, then run `chess2`.
 
-```bash
-python examples/play.py
-```
-
-On the start screen you choose your color and whether to play the bot or another person. You move by clicking a piece and then its target square. `<` and `>` take moves back and forward, and `GIVE UP` resigns. Each bot move takes a few seconds, because the search runs 1000 simulations by default. You can lower `NUM_SIMULATIONS` in `examples/play.py` for faster moves.
+On the start screen you choose your color and whether to play the bot or another person. You move by clicking a piece and then its target square. `<` and `>` take moves back and forward, and `GIVE UP` resigns. Each bot move takes a few seconds, because the search runs 1000 simulations by default. For faster moves, use `uv run chess2 --simulations 400`, or `--no-mcts` for the raw policy. `--help` lists all options.
 
 Two environment variables are useful:
-- `CHESS2_MODEL` points to a different weights file.
+- `CHESS2_MODEL` points to a different weights file (same as `--model`).
 - `STOCKFISH_PATH` is needed only if Stockfish isn't on your PATH.
 
 ## How strong is it?

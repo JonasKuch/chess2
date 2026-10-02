@@ -33,6 +33,7 @@ class Piece(ABC):
             if is_capture:
                 x, y = end_position
                 self.board.grid[y][x]._captured = True
+            self.board.last_move = (self._position, end_position)
             self._position = end_position
             self._has_moved = True
             self.reset_en_passant_vulnerabiity()

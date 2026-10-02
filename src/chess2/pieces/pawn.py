@@ -63,6 +63,7 @@ class Pawn(Piece):
             # Adjust properties
             self.reset_en_passant_vulnerabiity()
             self._en_passant_vulnerability = True if (y_new-y_old) == 2*direction else False
+            self.board.last_move = (self._position, end_position)
             self._position = end_position
             self._has_moved = True
             self.board.manage_castelling_squares_under_attack()
