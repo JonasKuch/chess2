@@ -1,10 +1,6 @@
-import orjson as json
-import h5py
 import numpy as np
-from multiprocessing import Pool, cpu_count
 import chess
 from chess2 import Color
-import copy
 
 # rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
 

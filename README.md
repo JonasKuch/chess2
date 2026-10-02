@@ -2,7 +2,7 @@
 
 A chess game I wrote from scratch in Python, with a pygame GUI and a small AlphaZero-style bot to play against.
 
-![The bot (White) beating Stockfish 1350, recorded with examples/record_game.py](docs/demo.gif)
+![The bot (White) beating Stockfish 1350](docs/demo.gif)
 
 *A winning game of my bot (White, MCTS, 400 simulations per move) against Stockfish limited to 1350 Elo*
 
@@ -82,7 +82,7 @@ To reproduce it, run `examples/play_strength.py`. You need [Stockfish](https://s
 src/chess2/            game rules (board.py, move.py, pieces/) and the game loop (game.py)
 src/chess2/gui/        pygame interface
 src/chess2/bot/        network, MCTS, data pipeline, training
-examples/              play.py, play_strength.py, debug_game.py (headless self-play)
+examples/              play_strength.py (Stockfish benchmark), record_game.py (GIF of a game), debug_game.py (headless self-play)
 tests/                 encoding check against real training data
 ```
 
@@ -94,8 +94,5 @@ tests/                 encoding check against real training data
 
 **My engine**
 - Insufficient material isn't detected as a draw.
-
-**The code**
-- `training.py`, `dataset.py`, `dataset_filter.py` and the notebooks are earlier experiments. The current pipeline is `regenerate_dataset.py` + `train.py`.
 
 Self-play training on top of the supervised model would be the obvious next step.
