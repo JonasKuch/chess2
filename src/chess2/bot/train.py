@@ -20,6 +20,7 @@ import numpy as np
 import torch
 from torch import nn
 from torch.nn.utils import clip_grad_norm_
+from torch.utils.data import BatchSampler, DataLoader, Dataset, RandomSampler, SequentialSampler
 
 from chess2.bot import NeuralNetwork
 
@@ -75,7 +76,7 @@ def get_device(name):
 def load_decoded(path):
     """Load the pickle and decode every position ONCE (vectorized).
 
-    The old DataLoader path re-decoded 12 bitboards per sample on every access,
+    The old Dataset re-decoded 12 bitboards per sample on every access,
     every epoch (~34s/epoch, single-threaded), starving the GPU. Here we do the
     whole decode in one numpy pass (~1s) and return resident tensors:
         boards uint8 (N,12,8,8), flags float32 (N,5), labels int64 (N,)
@@ -108,10 +109,31 @@ def decode_records(raw):
     return boards, flags, labels, values
 
 
-def iter_batches(n, batch_size, device, shuffle):
-    idx = torch.randperm(n, device=device) if shuffle else torch.arange(n, device=device)
-    for i in range(0, n, batch_size):
-        yield idx[i:i + batch_size]
+class DecodedPositions(Dataset):
+    """Already decoded positions, served a whole batch at a time.
+
+    The BatchSampler in make_loader hands over all indices of a batch at once, so
+    a batch is a single fancy-index op on tensors that already live on the
+    device, instead of BATCH_SIZE separate __getitem__ calls plus a stack.
+    """
+
+    def __init__(self, boards, flags, labels, values):
+        self.boards, self.flags, self.labels, self.values = boards, flags, labels, values
+
+    def __len__(self):
+        return self.boards.shape[0]
+
+    def __getitem__(self, idx):
+        idx = torch.as_tensor(idx, device=self.boards.device)
+        # uint8 -> float on-device, no host copy
+        return self.boards[idx].float(), self.flags[idx], self.labels[idx], self.values[idx]
+
+
+def make_loader(dataset, shuffle):
+    sampler = RandomSampler(dataset) if shuffle else SequentialSampler(dataset)
+    # batch_size=None: the BatchSampler already builds the batches.
+    # num_workers stays 0 -- the tensors are on the GPU and workers can't share them.
+    return DataLoader(dataset, sampler=BatchSampler(sampler, BATCH_SIZE, drop_last=False), batch_size=None)
 
 
 def build_optimizer(model):
@@ -135,18 +157,13 @@ def build_optimizer(model):
 # --------------------------------------------------------------------------- #
 # TRAIN / VAL LOOPS
 # --------------------------------------------------------------------------- #
-def train_loop(boards, flags, labels, values, model, policy_loss_fn, value_loss_fn, optimizer, device):
+def train_loop(loader, model, policy_loss_fn, value_loss_fn, optimizer):
     model.train()
-    n = boards.shape[0]
+    n = len(loader.dataset)
     run_p, run_v = 0.0, 0.0
     nb = 0
 
-    for b, bidx in enumerate(iter_batches(n, BATCH_SIZE, device, shuffle=True)):
-        xb = boards[bidx].float()       # uint8 -> float on-device, no host copy
-        fb = flags[bidx]
-        yb = labels[bidx]
-        vb = values[bidx]
-
+    for b, (xb, fb, yb, vb) in enumerate(loader):
         policy, value = model(xb, fb)
         loss_p = policy_loss_fn(policy, yb)
         loss_v = value_loss_fn(value, vb)
@@ -168,21 +185,19 @@ def train_loop(boards, flags, labels, values, model, policy_loss_fn, value_loss_
 
 
 @torch.no_grad()
-def validation_loop(boards, flags, labels, values, model, policy_loss_fn, value_loss_fn, device):
+def validation_loop(loader, model, policy_loss_fn, value_loss_fn):
     model.eval()
-    n = boards.shape[0]
+    n = len(loader.dataset)
     vp, vv = 0.0, 0.0
     top1 = 0
     top5 = 0
     nb = 0
 
-    for bidx in iter_batches(n, BATCH_SIZE, device, shuffle=False):
-        xb = boards[bidx].float()
-        policy, value = model(xb, flags[bidx])
-        yb = labels[bidx]
+    for xb, fb, yb, vb in loader:
+        policy, value = model(xb, fb)
 
         vp += policy_loss_fn(policy, yb).item()
-        vv += value_loss_fn(value, values[bidx]).item()
+        vv += value_loss_fn(value, vb).item()
         nb += 1
         top1 += (policy.argmax(dim=1) == yb).sum().item()
         top5_idx = policy.topk(5, dim=1).indices
@@ -211,11 +226,13 @@ def main():
     labels, values = labels.to(device), values.to(device)
     tr0, tr1 = TRAIN_RANGE
     va0, va1 = VAL_RANGE
-    tr_b, tr_f, tr_y, tr_v = boards[tr0:tr1], flags[tr0:tr1], labels[tr0:tr1], values[tr0:tr1]
-    va_b, va_f, va_y, va_v = boards[va0:va1], flags[va0:va1], labels[va0:va1], values[va0:va1]
+    train_set = DecodedPositions(boards[tr0:tr1], flags[tr0:tr1], labels[tr0:tr1], values[tr0:tr1])
+    val_set = DecodedPositions(boards[va0:va1], flags[va0:va1], labels[va0:va1], values[va0:va1])
+    train_loader = make_loader(train_set, shuffle=True)
+    val_loader = make_loader(val_set, shuffle=False)
     mem = boards.element_size() * boards.nelement() / 1e6
     print(f"decoded {boards.shape[0]:,} positions in {time.time()-t0:.1f}s "
-          f"({mem:.0f} MB on {device}) | train: {tr_b.shape[0]:,} | val: {va_b.shape[0]:,}",
+          f"({mem:.0f} MB on {device}) | train: {len(train_set):,} | val: {len(val_set):,}",
           flush=True)
 
     model = NeuralNetwork(
@@ -245,10 +262,8 @@ def main():
         print(f"\nEpoch {epoch}/{EPOCHS}  (lr={optimizer.param_groups[0]['lr']:.2e})\n"
               f"-------------------------------", flush=True)
 
-        tr_ploss, tr_vloss = train_loop(tr_b, tr_f, tr_y, tr_v, model,
-                                        policy_loss_fn, value_loss_fn, optimizer, device)
-        val_ploss, val_vloss, val_top1 = validation_loop(va_b, va_f, va_y, va_v, model,
-                                                         policy_loss_fn, value_loss_fn, device)
+        tr_ploss, tr_vloss = train_loop(train_loader, model, policy_loss_fn, value_loss_fn, optimizer)
+        val_ploss, val_vloss, val_top1 = validation_loop(val_loader, model, policy_loss_fn, value_loss_fn)
         scheduler.step()
 
         torch.save(model.state_dict(), last_path)
