@@ -24,3 +24,6 @@ data_leela/
 # Trained params
 saved_models/
 
+
+# Recordings from examples/record_game.py
+games/

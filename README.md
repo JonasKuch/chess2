@@ -2,7 +2,9 @@
 
 A chess game I wrote from scratch in Python, with a pygame GUI and a small AlphaZero-style bot to play against.
 
-![A game against the bot](docs/demo.gif)
+![The bot (White) beating Stockfish 1350, recorded with examples/record_game.py](docs/demo.gif)
+
+*A winning game of my bot (White, MCTS, 400 simulations per move) against Stockfish limited to 1350 Elo*
 
 ## What this is
 
@@ -91,7 +93,6 @@ tests/                 encoding check against real training data
 - The input contains only the current position, with no history. The network can't see repetitions coming.
 
 **My engine**
-- The 50-move counter ignores king and rook moves.
 - Insufficient material isn't detected as a draw.
 
 **The code**

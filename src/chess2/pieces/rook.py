@@ -38,6 +38,8 @@ class Rook(Piece):
                 x, y = end_position
                 self.board.grid[y][x]._captured = True
                 self.board.halfmove_clock = 0
+            else:
+                self.board.halfmove_clock += 1
             self.board.last_move = (self._position, end_position)
             self._position = end_position
             self._has_moved = True
