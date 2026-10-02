@@ -24,7 +24,7 @@ Later I added a bot. It is a policy/value network combined with Monte Carlo tree
 
 ## Training data
 
-The training data is a Leela Chess Zero dataset (`ccrl-v3.tar.bz2`) built from CCRL engine games. I use 2.5 million positions. They are split by game into 2.3M for training and 200k for validation, so positions from the same game never end up on both sides of the split.
+The training data is the [standard CCRL dataset](https://lczero.org/blog/2018/09/a-standard-dataset/) published by the Leela Chess Zero project: 2.5 million engine games from CCRL 40/40 and 40/4, in Leela's v3 training format. I use 2.5 million positions from its training split. They are split by game into 2.3M for training and 200k for validation, so positions from the same game never end up on both sides of the split.
 
 For each position the targets are:
 - the move that was played (policy, with label smoothing),
@@ -37,7 +37,7 @@ python -m chess2.bot.regenerate_dataset   # data_leela/ccrl-v3.tar.bz2 -> data_l
 python -m chess2.bot.train
 ```
 
-The raw data isn't in the repo. The trained weights are: `src/chess2/bot/weights/chess2_rb6_c96.pth`.
+The data isn't in the repo. To train yourself, download [`ccrl-v3.tar.bz2`](https://storage.lczero.org/files/ccrl-v3.tar.bz2) (11 GB) into `src/chess2/bot/data_leela/`. The trained weights are in the repo: `src/chess2/bot/weights/chess2_rb6_c96.pth`.
 
 One bug took me a while to find: the board encoding at play time didn't match the training data for White. Leela mirrors the files in its bitboards, and that mirroring was missing on the inference side. The bot only played properly as Black. Castling had a similar problem: Leela writes it as king-takes-rook (`e1h1`), so the bot almost never castled. `tests/test_encoding.py` now rebuilds real training positions and checks that both paths produce identical tensors and move indices.
 
@@ -55,9 +55,9 @@ uv run chess2
 
 On the start screen you choose your color and whether to play the bot or another person. You move by clicking a piece and then its target square. `<` and `>` take moves back and forward, and `GIVE UP` resigns. Each bot move takes a few seconds, because the search runs 1000 simulations by default. For faster moves, use `uv run chess2 --simulations 400`, or `--no-mcts` for the raw policy. `--help` lists all options.
 
-Two environment variables are useful:
-- `CHESS2_MODEL` points to a different weights file (same as `--model`).
-- `STOCKFISH_PATH` is needed only if Stockfish isn't on your PATH.
+`CHESS2_MODEL` points to a different weights file (same as `--model`).
+
+You don't need Stockfish to play. It's only used by the scripts in `examples/` that play against it (`play_strength.py`, `record_game.py`). For those, install it (e.g. `brew install stockfish`), and set `STOCKFISH_PATH` if it isn't on your PATH.
 
 ## How strong is it?
 

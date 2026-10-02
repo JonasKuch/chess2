@@ -27,3 +27,12 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 chess2 = ["bot/weights/*.pth", "gui/fonts/*.ttf", "gui/pieces_img/*.png"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
+
+[tool.pytest.ini_options]
+# joblib warns about a NumPy 2.5 deprecation while loading the test fixture
+filterwarnings = ["ignore::DeprecationWarning:joblib.*"]
